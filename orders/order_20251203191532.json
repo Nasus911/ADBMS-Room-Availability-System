@@ -1,0 +1,28 @@
+{
+  "customer_number": "#10",
+  "order_id": "20251203191532",
+  "timestamp": "2025-12-03T19:16:57.914297",
+  "items": [
+    {
+      "id": 21,
+      "name": "Brownies (5 pcs)",
+      "price": 5.99,
+      "quantity": 1,
+      "size": null
+    },
+    {
+      "id": 22,
+      "name": "Cheesecake (piece)",
+      "price": 6.49,
+      "quantity": 5,
+      "size": null
+    }
+  ],
+  "customer_name": "",
+  "customer_contact": "",
+  "customer_address": "",
+  "payment_method": "Cash",
+  "delivery_method": "Dine-in",
+  "special_instructions": "",
+  "total": 38.440000000000005
+}

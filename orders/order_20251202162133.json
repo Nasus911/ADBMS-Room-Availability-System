@@ -1,0 +1,42 @@
+{
+  "customer_number": "#5",
+  "order_id": "20251202162133",
+  "timestamp": "2025-12-02T16:22:13.497456",
+  "items": [
+    {
+      "id": 4,
+      "name": "French Fries (Medium)",
+      "price": 4.49,
+      "quantity": 1,
+      "size": "Medium"
+    },
+    {
+      "id": 11,
+      "name": "Garlic Bread",
+      "price": 4.99,
+      "quantity": 1,
+      "size": null
+    },
+    {
+      "id": 19,
+      "name": "Onion Rings (Large)",
+      "price": 4.99,
+      "quantity": 1,
+      "size": "Large"
+    },
+    {
+      "id": 20,
+      "name": "Mozzarella Sticks (Large)",
+      "price": 6.49,
+      "quantity": 1,
+      "size": "Large"
+    }
+  ],
+  "customer_name": "",
+  "customer_contact": "",
+  "customer_address": "",
+  "payment_method": "Cash",
+  "delivery_method": "Dine-in",
+  "special_instructions": "",
+  "total": 20.96
+}

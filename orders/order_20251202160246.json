@@ -1,0 +1,32 @@
+{
+  "customer_number": "#2",
+  "order_id": "20251202160246",
+  "timestamp": "2025-12-02T16:03:37.196464",
+  "items": [
+    {
+      "id": 13,
+      "name": "Cheeseburger",
+      "price": 9.49,
+      "quantity": 3
+    },
+    {
+      "id": 14,
+      "name": "Bacon Burger",
+      "price": 10.49,
+      "quantity": 3
+    },
+    {
+      "id": 12,
+      "name": "Iced Tea",
+      "price": 2.49,
+      "quantity": 4
+    }
+  ],
+  "customer_name": "",
+  "customer_contact": "",
+  "customer_address": "",
+  "payment_method": "Credit Card",
+  "delivery_method": "Dine-in",
+  "special_instructions": "",
+  "total": 69.9
+}

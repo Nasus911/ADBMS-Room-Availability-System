@@ -1,0 +1,25 @@
+{
+  "customer_number": "#18",
+  "order_id": "20251218221544",
+  "timestamp": "2025-12-18T22:15:49.384707",
+  "items": [
+    {
+      "id": 40,
+      "name": "Burger & Fries",
+      "price": 79.0,
+      "quantity": 1,
+      "size": null,
+      "details": [
+        "Classic Burger",
+        "French Fries"
+      ]
+    }
+  ],
+  "customer_name": "",
+  "customer_contact": "",
+  "customer_address": "",
+  "payment_method": "Cash",
+  "delivery_method": "Dine-in",
+  "special_instructions": "",
+  "total": 79.0
+}

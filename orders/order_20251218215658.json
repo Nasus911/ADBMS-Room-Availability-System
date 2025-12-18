@@ -1,0 +1,26 @@
+{
+  "customer_number": "#13",
+  "order_id": "20251218215658",
+  "timestamp": "2025-12-18T21:57:26.490480",
+  "items": [
+    {
+      "id": 10,
+      "name": "Cheeseburger Combo",
+      "price": 109.0,
+      "quantity": 2,
+      "size": null,
+      "details": [
+        "Cheeseburger",
+        "French Fries",
+        "Coca Cola"
+      ]
+    }
+  ],
+  "customer_name": "",
+  "customer_contact": "",
+  "customer_address": "",
+  "payment_method": "Cash",
+  "delivery_method": "Dine-in",
+  "special_instructions": "",
+  "total": 218.0
+}

@@ -1,0 +1,70 @@
+{
+  "customer_number": "#9",
+  "order_id": "20251203190257",
+  "timestamp": "2025-12-03T19:06:23.987430",
+  "items": [
+    {
+      "id": 3,
+      "name": "Garden Salad",
+      "price": 6.99,
+      "quantity": 1,
+      "size": null
+    },
+    {
+      "id": 4,
+      "name": "French Fries (Large)",
+      "price": 10.99,
+      "quantity": 1,
+      "size": "Large"
+    },
+    {
+      "id": 19,
+      "name": "Onion Rings (Large)",
+      "price": 10.99,
+      "quantity": 1,
+      "size": "Large"
+    },
+    {
+      "id": 20,
+      "name": "Mozzarella Sticks (Large)",
+      "price": 12.49,
+      "quantity": 1,
+      "size": "Large"
+    },
+    {
+      "id": 11,
+      "name": "Garlic Bread",
+      "price": 4.99,
+      "quantity": 1,
+      "size": null
+    },
+    {
+      "id": 5,
+      "name": "Coca Cola (Large)",
+      "price": 9.99,
+      "quantity": 1,
+      "size": "Large"
+    },
+    {
+      "id": 21,
+      "name": "Brownie",
+      "price": 5.99,
+      "quantity": 1,
+      "size": null
+    },
+    {
+      "id": 22,
+      "name": "Cheesecake",
+      "price": 6.49,
+      "quantity": 1,
+      "size": null
+    }
+  ],
+  "customer_name": "",
+  "customer_contact": "",
+  "customer_address": "",
+  "payment_method": "Cash",
+  "delivery_method": "Dine-in",
+  "special_instructions": "",
+  "total": 68.92
+}

@@ -1,0 +1,38 @@
+{
+  "customer_number": "#3",
+  "order_id": "20251202160351",
+  "timestamp": "2025-12-02T16:05:05.060146",
+  "items": [
+    {
+      "id": 1,
+      "name": "Classic Burger",
+      "price": 8.99,
+      "quantity": 5
+    },
+    {
+      "id": 3,
+      "name": "Garden Salad",
+      "price": 6.99,
+      "quantity": 3
+    },
+    {
+      "id": 15,
+      "name": "Milkshake",
+      "price": 5.49,
+      "quantity": 10
+    },
+    {
+      "id": 22,
+      "name": "Cheesecake",
+      "price": 6.49,
+      "quantity": 10
+    }
+  ],
+  "customer_name": "",
+  "customer_contact": "",
+  "customer_address": "",
+  "payment_method": "Cash",
+  "delivery_method": "Dine-in",
+  "special_instructions": "",
+  "total": 185.72000000000003
+}
