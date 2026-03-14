@@ -1,120 +1,1086 @@
-<!doctype html>
+ <!doctype html>
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>ADBMS Room Availability</title>
-    <link rel="stylesheet" href="styles.css" />
+    <style>
+@import url("https://fonts.googleapis.com/css2?family=League+Spartan:wght@500;700;800&family=Manrope:wght@400;500;700&display=swap");
+
+:root {
+  --bg: #eceff4;
+  --card: #f8f9fc;
+  --line: #d7dbe4;
+  --dark-blue: #1a3f6a;
+  --text: #1f2733;
+  --available: #2f8f43;
+  --danger: #d72732;
+  --hero-start: #123767;
+  --hero-mid: #1f4a86;
+  --hero-end: #2e66ae;
+  --hero-highlight: #ffc844;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family: "Manrope", "Segoe UI", Tahoma, sans-serif;
+  background: var(--bg);
+  color: var(--text);
+}
+
+.page {
+  width: min(1320px, 96vw);
+  margin: 22px auto;
+  display: grid;
+  gap: 16px;
+}
+
+.card {
+  background: var(--card);
+  border: 1px solid #d2d7e1;
+  border-radius: 8px;
+  box-shadow: 0 3px 12px rgba(15, 32, 58, 0.1);
+}
+
+.login-screen,
+.dashboard-screen {
+  width: min(1320px, 96vw);
+  margin: 0 auto;
+  padding: clamp(28px, 3.2vw, 48px);
+  overflow: hidden;
+  position: relative;
+  border-radius: 24px;
+  border: 1px solid rgba(182, 208, 243, 0.35);
+  background:
+    radial-gradient(circle at 4% 0%, rgba(255, 255, 255, 0.22), transparent 52%),
+    linear-gradient(115deg, var(--hero-start) 0%, var(--hero-mid) 44%, var(--hero-end) 100%);
+  box-shadow: 0 20px 48px rgba(8, 24, 51, 0.28);
+}
+
+.login-screen {
+  color: #f8fbff;
+}
+
+.dashboard-screen {
+  color: var(--text);
+  padding: clamp(18px, 2.2vw, 30px);
+}
+
+.login-screen::before,
+.dashboard-screen::before {
+  content: "";
+  position: absolute;
+  width: min(32vw, 420px);
+  aspect-ratio: 1;
+  right: -90px;
+  top: -100px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(255, 255, 255, 0.22), rgba(255, 255, 255, 0));
+}
+
+.login-screen::after,
+.dashboard-screen::after {
+  content: "";
+  position: absolute;
+  width: min(38vw, 500px);
+  aspect-ratio: 1;
+  left: -150px;
+  bottom: -220px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(13, 38, 75, 0.42), rgba(13, 38, 75, 0));
+}
+
+.login-hero {
+  display: grid;
+  grid-template-columns: 1.2fr 1px minmax(210px, 0.9fr);
+  align-items: center;
+  gap: clamp(22px, 3.5vw, 48px);
+  min-height: clamp(280px, 45vh, 420px);
+  position: relative;
+  z-index: 1;
+}
+
+.dashboard-hero {
+  display: grid;
+  grid-template-columns: 1.2fr 1px minmax(190px, 0.85fr);
+  align-items: center;
+  gap: clamp(18px, 2.6vw, 34px);
+  min-height: clamp(140px, 22vh, 190px);
+  position: relative;
+  z-index: 1;
+}
+
+.login-copy {
+  animation: fadeSlide 0.8s ease both;
+}
+
+.dashboard-copy {
+  animation: fadeSlide 0.7s ease both;
+}
+
+.hero-divider {
+  width: 1px;
+  height: clamp(180px, 28vh, 300px);
+  background: linear-gradient(
+    to bottom,
+    rgba(167, 204, 247, 0),
+    rgba(167, 204, 247, 0.65) 28%,
+    rgba(167, 204, 247, 0.65) 72%,
+    rgba(167, 204, 247, 0)
+  );
+}
+
+.login-screen h1 {
+  margin: 0;
+  font-size: clamp(38px, 5vw, 74px);
+  font-family: "League Spartan", "Trebuchet MS", sans-serif;
+  font-weight: 800;
+  line-height: 0.97;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  color: #f2f7ff;
+}
+
+.login-title-line {
+  display: block;
+}
+
+.subtitle {
+  margin: 18px 0 0;
+  color: rgba(237, 245, 255, 0.9);
+  font-size: clamp(16px, 1.5vw, 28px);
+  font-weight: 500;
+  letter-spacing: 0.01em;
+}
+
+.login-brand {
+  justify-self: center;
+  width: clamp(190px, 25vw, 370px);
+  animation: logoFloat 5s ease-in-out infinite;
+  filter: drop-shadow(0 12px 18px rgba(6, 16, 33, 0.42));
+}
+
+.dashboard-brand {
+  justify-self: center;
+  width: clamp(185px, 19vw, 290px);
+  animation: logoFloat 5s ease-in-out infinite;
+  filter: drop-shadow(0 10px 15px rgba(6, 16, 33, 0.4));
+}
+
+.login-brand img {
+  width: 100%;
+  display: block;
+  object-fit: contain;
+}
+
+.dashboard-brand img {
+  width: 100%;
+  display: block;
+  object-fit: contain;
+}
+
+.dashboard-copy h2 {
+  margin: 0;
+  font-family: "League Spartan", "Trebuchet MS", sans-serif;
+  font-size: clamp(34px, 4.2vw, 62px);
+  font-weight: 800;
+  line-height: 0.95;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  color: #f2f7ff;
+}
+
+.dashboard-title-line {
+  display: block;
+}
+
+.dashboard-subtitle {
+  margin: 14px 0 0;
+  color: rgba(237, 245, 255, 0.9);
+  font-size: clamp(15px, 1.3vw, 22px);
+  font-weight: 500;
+  letter-spacing: 0.01em;
+}
+
+.dashboard-main {
+  margin-top: 12px;
+  border: 1px solid rgba(189, 214, 247, 0.34);
+  border-radius: 14px;
+  background: rgba(5, 18, 42, 0.42);
+  backdrop-filter: blur(2px);
+  overflow: hidden;
+  position: relative;
+  z-index: 1;
+}
+
+.login-body {
+  width: min(520px, 100%);
+  margin: 14px auto 0;
+  padding: 20px 22px 18px;
+  border: 1px solid rgba(189, 214, 247, 0.36);
+  border-radius: 14px;
+  background: rgba(5, 18, 42, 0.44);
+  backdrop-filter: blur(2px);
+  position: relative;
+  z-index: 1;
+}
+
+.login-form-title {
+  margin: 0 0 14px;
+  color: rgba(243, 250, 255, 0.92);
+  font-weight: 700;
+  font-size: 15px;
+  letter-spacing: 0.02em;
+}
+
+.login-form {
+  display: grid;
+  gap: 12px;
+}
+
+.form-group {
+  display: grid;
+  gap: 6px;
+}
+
+.form-group label {
+  font-size: 13px;
+  font-weight: 700;
+  color: rgba(228, 240, 255, 0.92);
+}
+
+.login-body input {
+  height: 42px;
+  border: 1px solid rgba(188, 214, 248, 0.4);
+  border-radius: 8px;
+  color: #f7fbff;
+  background: rgba(8, 29, 59, 0.55);
+}
+
+.login-body input::placeholder {
+  color: rgba(199, 216, 238, 0.86);
+}
+
+.login-body .password-field input {
+  width: 100%;
+}
+
+.login-body .toggle-password {
+  color: rgba(225, 237, 255, 0.92);
+}
+
+.login-btn {
+  height: 44px;
+  font-size: 15px;
+  margin-top: 6px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  background: linear-gradient(135deg, #ffd86d, #f5b634);
+  color: #15335f;
+}
+
+.error-msg {
+  margin: 2px 0 0;
+  color: #ffd7de;
+  font-weight: 600;
+}
+
+.demo-accounts {
+  margin-top: 14px;
+  padding-top: 12px;
+  border-top: 1px solid rgba(195, 217, 247, 0.3);
+  color: rgba(227, 238, 255, 0.94);
+  font-size: 13px;
+}
+
+.demo-accounts p {
+  margin: 4px 0;
+}
+
+.demo-accounts span {
+  color: #ffd870;
+  font-weight: 600;
+}
+
+@keyframes fadeSlide {
+  from {
+    opacity: 0;
+    transform: translateX(-12px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes logoFloat {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+
+  50% {
+    transform: translateY(-10px);
+  }
+}
+
+.window-title {
+  height: 54px;
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 20px;
+  border-top-left-radius: 8px;
+  border-top-right-radius: 8px;
+}
+
+.window-title h2 {
+  margin: 0;
+  font-size: 32px;
+  font-weight: 700;
+}
+
+.icons {
+  display: flex;
+  gap: 12px;
+  font-size: 14px;
+}
+
+.admin-title {
+  background: linear-gradient(135deg, #2f5c93, #1a3f6a);
+}
+
+.prof-title {
+  background: linear-gradient(135deg, #2f2a58, #31295c 45%, #3f3169);
+}
+
+.student-title {
+  background: linear-gradient(135deg, #24546f, #1b6076);
+}
+
+.hidden {
+  display: none !important;
+}
+
+.admin-window {
+  position: relative;
+}
+
+.admin-body {
+  display: grid;
+  grid-template-columns: 220px 1fr;
+  min-height: 460px;
+}
+
+.sidebar {
+  border-right: 1px solid rgba(189, 214, 247, 0.3);
+  padding: 8px 0;
+  background: rgba(7, 26, 53, 0.5);
+}
+
+.nav-item {
+  width: 100%;
+  text-align: left;
+  border: none;
+  border-bottom: 1px solid rgba(189, 214, 247, 0.23);
+  background: transparent;
+  padding: 13px 16px;
+  font-size: 17px;
+  cursor: pointer;
+  color: #e4efff;
+}
+
+.nav-item.active {
+  background: rgba(255, 208, 87, 0.95);
+  color: #14315d;
+  font-weight: 600;
+}
+
+.content {
+  padding: 14px 16px 18px;
+  background: rgba(4, 16, 37, 0.12);
+}
+
+.view h1 {
+  margin: 0 0 14px;
+  color: #edf4ff;
+}
+
+.panel {
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #fefefe;
+  padding: 14px;
+}
+
+.panel h3,
+.inner h3 {
+  margin: 0 0 10px;
+  font-size: 37px;
+  color: #203f70;
+}
+
+.dashboard-main .inner h3 {
+  color: #eef5ff;
+}
+
+.panel p,
+.dashboard-main table {
+  color: #2a3448;
+}
+
+.manage-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 12px;
+}
+
+.panel-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-bottom: 10px;
+}
+
+.panel-header h3 {
+  margin-bottom: 0;
+}
+
+.assign-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.assign-toolbar select {
+  min-width: 180px;
+  height: 40px;
+}
+
+.assign-toolbar .primary {
+  height: 40px;
+  padding-inline: 16px;
+}
+
+.panel .form-error {
+  margin: 0 0 10px;
+}
+
+.manage-header h1 {
+  margin: 0;
+  color: #edf4ff;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  background: #fff;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  overflow: hidden;
+}
+
+thead tr {
+  background: #3c4658;
+  color: #fff;
+}
+
+th,
+td {
+  border: 1px solid #d9dde6;
+  text-align: left;
+  padding: 9px 12px;
+}
+
+.table-scroll {
+  max-height: min(360px, 42vh);
+  overflow-y: auto;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: #fff;
+}
+
+.table-scroll table {
+  border: none;
+  border-radius: 0;
+}
+
+.table-scroll thead th {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+}
+
+.section-row td {
+  background: #e7eef9;
+  color: #21406c;
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.occupied-row {
+  background: #ef2d3a;
+  color: #fff;
+}
+
+.available {
+  color: var(--available);
+  font-weight: 700;
+}
+
+.occupied {
+  color: var(--danger);
+  font-weight: 700;
+}
+
+.occupied-row .occupied,
+.occupied-row .available {
+  color: #fff;
+}
+
+.inactive-user-row {
+  background: #f2f3f6;
+  color: #6a7180;
+}
+
+.status-pill {
+  display: inline-block;
+  min-width: 78px;
+  padding: 4px 10px;
+  border-radius: 999px;
+  text-align: center;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.status-active {
+  background: rgba(47, 143, 67, 0.12);
+  color: #27773a;
+}
+
+.status-inactive {
+  background: rgba(125, 132, 148, 0.16);
+  color: #596173;
+}
+
+.user-toggle-btn {
+  min-width: 96px;
+}
+
+.action-note {
+  color: #5c6475;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.primary,
+.secondary,
+.ghost,
+.action-btn,
+.danger-btn {
+  border: none;
+  border-radius: 6px;
+  padding: 8px 14px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.primary,
+.action-btn {
+  color: #fff;
+  background: linear-gradient(135deg, #2e5d93, #1e487e);
+}
+
+.login-btn.primary {
+  background: linear-gradient(135deg, #ffd86d, #f5b634);
+  color: #15335f;
+}
+
+.secondary {
+  color: #374156;
+  background: #e5e8ef;
+}
+
+.ghost {
+  background: transparent;
+  color: #4b5468;
+  font-size: 18px;
+  padding: 2px 8px;
+}
+
+.danger-btn {
+  color: #fff;
+  background: #d92534;
+}
+
+.role-window {
+  max-width: none;
+  margin: 0 auto;
+}
+
+.inner {
+  padding: 14px 16px 18px;
+}
+
+.logout {
+  margin-top: 10px;
+}
+
+.student-note {
+  margin: 10px 0 0;
+  border: 1px solid #d3d7e1;
+  border-radius: 4px;
+  background: #fbfbfc;
+  padding: 8px 10px;
+  font-weight: 600;
+}
+
+.badge {
+  display: inline-block;
+  margin-left: 8px;
+  padding: 2px 7px;
+  border-radius: 999px;
+  font-size: 11px;
+  background: #b81f2d;
+  color: #fff;
+}
+
+.modal {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 22px 14px;
+  background: rgba(8, 16, 32, 0.58);
+  backdrop-filter: blur(2px);
+  z-index: 2000;
+}
+
+.modal-card {
+  width: min(520px, 94vw);
+  max-height: min(88vh, 760px);
+  overflow: auto;
+  background: #f6f7fa;
+  border: 1px solid #d7dbe4;
+  border-radius: 8px;
+  box-shadow: 0 8px 20px rgba(18, 31, 54, 0.15);
+}
+
+.modal-head {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 1px solid var(--line);
+  padding: 12px 14px;
+  background: #f6f7fa;
+}
+
+.modal-head h3 {
+  margin: 0;
+}
+
+.modal-body {
+  display: grid;
+  gap: 10px;
+  padding: 14px;
+}
+
+input,
+select {
+  height: 38px;
+  border: 1px solid #cdd2dc;
+  border-radius: 4px;
+  padding: 0 10px;
+  font-size: 14px;
+  background: #fff;
+}
+
+.password-field {
+  position: relative;
+}
+
+.password-field input {
+  width: 100%;
+  padding-right: 42px;
+}
+
+.toggle-password {
+  position: absolute;
+  top: 50%;
+  right: 8px;
+  transform: translateY(-50%);
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  font-size: 16px;
+  color: #4e5870;
+  padding: 4px;
+}
+
+.form-error {
+  margin: -2px 0 0;
+  color: #cc2534;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.form-actions {
+  margin-top: 4px;
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+@media (max-width: 1366px) and (min-width: 1051px) {
+  .page {
+    width: min(1200px, 94vw);
+    margin: 12px auto;
+    gap: 12px;
+  }
+
+  .dashboard-screen {
+    padding: 16px 18px;
+    border-radius: 20px;
+  }
+
+  .dashboard-copy h2 {
+    font-size: clamp(30px, 3.4vw, 46px);
+  }
+
+  .dashboard-subtitle {
+    margin-top: 10px;
+    font-size: clamp(14px, 1.15vw, 18px);
+  }
+
+  .dashboard-brand {
+    width: clamp(145px, 13vw, 190px);
+  }
+
+  .admin-body {
+    grid-template-columns: 190px 1fr;
+    min-height: 0;
+  }
+
+  .nav-item {
+    padding: 11px 12px;
+    font-size: 15px;
+  }
+
+  .view h1 {
+    margin-bottom: 10px;
+    font-size: clamp(30px, 2.3vw, 38px);
+  }
+
+  .panel h3,
+  .inner h3 {
+    margin-bottom: 8px;
+    font-size: clamp(28px, 2.4vw, 40px);
+  }
+
+  .assign-toolbar select {
+    min-width: 150px;
+  }
+
+  .table-scroll {
+    max-height: min(300px, 36vh);
+  }
+
+  th,
+  td {
+    padding: 7px 10px;
+    font-size: 14px;
+  }
+
+  .action-btn,
+  .danger-btn,
+  .primary,
+  .secondary {
+    padding: 7px 12px;
+    font-size: 14px;
+  }
+}
+
+@media (max-width: 1050px) {
+  .login-screen {
+    padding: 26px 22px;
+  }
+
+  .dashboard-screen {
+    padding: 26px 22px;
+  }
+
+  .login-hero {
+    grid-template-columns: 1fr;
+    gap: 16px;
+    min-height: 0;
+  }
+
+  .dashboard-hero {
+    grid-template-columns: 1fr;
+    gap: 14px;
+    min-height: 0;
+  }
+
+  .hero-divider {
+    display: none;
+  }
+
+  .login-brand {
+    justify-self: start;
+    width: clamp(170px, 52vw, 300px);
+  }
+
+  .dashboard-brand {
+    justify-self: start;
+    width: clamp(130px, 38vw, 200px);
+  }
+
+  .subtitle {
+    margin-top: 12px;
+  }
+
+  .login-body {
+    margin: 18px auto 0;
+  }
+
+  .admin-body {
+    grid-template-columns: 1fr;
+  }
+
+  .sidebar {
+    display: flex;
+    border-right: none;
+    border-bottom: 1px solid var(--line);
+    overflow-x: auto;
+  }
+
+  .nav-item {
+    min-width: 160px;
+    border-bottom: none;
+    border-right: 1px solid #dee2ea;
+  }
+
+  .window-title h2 {
+    font-size: 24px;
+  }
+
+  .panel h3,
+  .inner h3 {
+    font-size: 30px;
+  }
+}
+
+@media (max-width: 640px) {
+  .page {
+    margin: 14px auto;
+  }
+
+  .login-screen {
+    border-radius: 16px;
+    padding: 18px 14px;
+  }
+
+  .dashboard-screen {
+    border-radius: 16px;
+    padding: 18px 14px;
+  }
+
+  .login-screen h1 {
+    font-size: clamp(30px, 10vw, 52px);
+  }
+
+  .login-body {
+    padding: 16px 14px;
+  }
+
+  .dashboard-main {
+    margin-top: 14px;
+  }
+
+  .dashboard-copy h2 {
+    font-size: clamp(30px, 9.2vw, 48px);
+  }
+
+  .assign-toolbar {
+    width: 100%;
+  }
+
+  .assign-toolbar select,
+  .assign-toolbar .primary {
+    width: 100%;
+  }
+}
+    </style>
   </head>
   <body>
     <main class="page">
       <section id="loginScreen" class="login-screen card">
-        <h1>ADBMS Login</h1>
-        <p class="subtitle">Automated Room Availability Dashboard</p>
-        <form id="loginForm" class="login-form">
-          <input id="loginUsername" type="text" placeholder="Username" required />
-          <input id="loginPassword" type="password" placeholder="Password" required />
-          <button type="submit" class="primary">Log In</button>
-          <p id="loginError" class="error-msg hidden">Invalid username or password.</p>
-        </form>
-        <div class="demo-accounts">
-          <strong>Demo Accounts:</strong>
-          <p>Admin: <span>admin / admin123</span></p>
-          <p>Professor: <span>psantos / prof123</span></p>
-          <p>Student: <span>jdc / student123</span></p>
+        <div class="login-hero">
+          <div class="login-copy">
+            <h1>
+              <span class="login-title-line">DECEPTICON ACADEMY</span>
+              <span class="login-title-line">of EXCELLENCE</span>
+            </h1>
+            <p class="subtitle">Automated Room Availability Dashboard</p>
+          </div>
+          <div class="hero-divider" aria-hidden="true"></div>
+          <div class="login-brand">
+            <img src="Copilot_20260314_215117.png" alt="Decepticon Academy logo" />
+          </div>
+        </div>
+        <div class="login-body">
+          <p class="login-form-title">SIGN IN TO CONTINUE</p>
+          <form id="loginForm" class="login-form">
+            <div class="form-group">
+              <label for="loginUsername">Username</label>
+              <input id="loginUsername" type="text" placeholder="Enter your username" required />
+            </div>
+            <div class="form-group">
+              <label for="loginPassword">Password</label>
+              <div class="password-field">
+                <input id="loginPassword" type="password" placeholder="Enter your password" required />
+                <button type="button" class="toggle-password" data-toggle-password="loginPassword" aria-label="Show password">&#128065;</button>
+              </div>
+            </div>
+            <button type="submit" class="primary login-btn">Log In</button>
+            <p id="loginError" class="error-msg hidden">Invalid username or password.</p>
+          </form>
+          <div class="demo-accounts">
+            <strong>Demo Accounts:</strong>
+            <p>Admin: <span>admin / admin123</span></p>
+            <p>Professor: <span>psantos / prof123</span></p>
+            <p>Student: <span>jdc / student123</span></p>
+          </div>
         </div>
       </section>
 
-      <section id="adminDashboard" class="admin-window card hidden">
-        <header class="window-title admin-title">
-          <h2>Admin Dashboard</h2>
-          <div class="icons">
-            <span>👤</span>
-            <span>💬</span>
-            <span>🔔</span>
+      <section id="adminDashboard" class="admin-window dashboard-screen card hidden">
+        <div class="dashboard-hero">
+          <div class="dashboard-copy">
+            <h2>
+              <span class="dashboard-title-line">ADMIN CONTROL</span>
+              <span class="dashboard-title-line">PANEL</span>
+            </h2>
+            <p class="dashboard-subtitle">Automated Room Availability Dashboard</p>
           </div>
-        </header>
+          <div class="hero-divider" aria-hidden="true"></div>
+          <div class="dashboard-brand">
+            <img src="Copilot_20260314_215117.png" alt="Decepticon Academy logo" />
+          </div>
+        </div>
 
-        <div class="admin-body">
-          <aside class="sidebar">
-            <button class="nav-item active" data-admin-view="dashboard">🏠 Dashboard</button>
-            <button class="nav-item" data-admin-view="manage">👥 Manage Users</button>
-            <button class="nav-item" data-admin-view="reports">📨 Reports</button>
-            <button class="nav-item" data-admin-view="settings">⚙ Settings</button>
-            <button id="adminLogoutBtn" class="nav-item">↩ Log Out</button>
-          </aside>
+        <div class="dashboard-main">
+          <div class="admin-body">
+            <aside class="sidebar">
+              <button class="nav-item active" data-admin-view="dashboard">&#127968; Dashboard</button>
+              <button class="nav-item" data-admin-view="manage">&#128101; Manage Users</button>
+              <button class="nav-item" data-admin-view="reports">&#128232; Reports</button>
+              <button class="nav-item" data-admin-view="settings">&#9881; Settings</button>
+              <button id="adminLogoutBtn" class="nav-item">&#8617; Log Out</button>
+            </aside>
 
-          <section class="content">
-            <div id="adminViewDashboard" class="view">
-              <h1 id="adminWelcome">Welcome, Admin!</h1>
-              <div class="panel">
-                <h3>Room Availability</h3>
+            <section class="content">
+              <div id="adminViewDashboard" class="view">
+                <h1 id="adminWelcome">Welcome, Admin!</h1>
+                <div class="panel">
+                  <div class="panel-header">
+                    <h3>Room Availability</h3>
+                    <form id="adminAssignForm" class="assign-toolbar">
+                      <select id="adminProfessorSelect" aria-label="Select professor">
+                        <option value="">Select professor</option>
+                      </select>
+                      <select id="adminRoomSelect" aria-label="Select room">
+                        <option value="">Select room</option>
+                      </select>
+                      <button type="submit" class="primary">Assign Room</button>
+                    </form>
+                  </div>
+                  <p id="adminAssignError" class="form-error hidden"></p>
+                  <div class="table-scroll">
+                    <table>
+                      <thead>
+                        <tr>
+                          <th>Room</th>
+                          <th>Status</th>
+                          <th>Current Professor</th>
+                          <th>Action</th>
+                        </tr>
+                      </thead>
+                      <tbody id="adminRoomBody"></tbody>
+                    </table>
+                  </div>
+                </div>
+              </div>
+
+              <div id="adminViewManage" class="view hidden">
+                <div class="manage-header">
+                  <h1>Manage Users</h1>
+                  <button id="openModalBtn" class="primary">+ Add New User</button>
+                </div>
                 <table>
                   <thead>
                     <tr>
-                      <th>Room</th>
+                      <th>Name</th>
+                      <th>Username</th>
+                      <th>Role</th>
                       <th>Status</th>
-                      <th>Current Professor</th>
-                      <th>Action</th>
+                      <th>Last Login</th>
+                      <th>Actions</th>
                     </tr>
                   </thead>
-                  <tbody id="adminRoomBody"></tbody>
+                  <tbody id="usersBody"></tbody>
                 </table>
               </div>
-            </div>
 
-            <div id="adminViewManage" class="view hidden">
-              <div class="manage-header">
-                <h1>Manage Users</h1>
-                <button id="openModalBtn" class="primary">+ Add New User</button>
+              <div id="adminViewReports" class="view hidden">
+                <h1>Reports</h1>
+                <div class="panel">
+                  <p>Room activity report view is ready for backend integration.</p>
+                </div>
               </div>
-              <table>
-                <thead>
-                  <tr>
-                    <th>Name</th>
-                    <th>Username</th>
-                    <th>Role</th>
-                    <th>Status</th>
-                    <th>Last Login</th>
-                    <th>Actions</th>
-                  </tr>
-                </thead>
-                <tbody id="usersBody"></tbody>
-              </table>
-            </div>
 
-            <div id="adminViewReports" class="view hidden">
-              <h1>Reports</h1>
-              <div class="panel">
-                <p>Room activity report view is ready for backend integration.</p>
+              <div id="adminViewSettings" class="view hidden">
+                <h1>Settings</h1>
+                <div class="panel">
+                  <p>System settings panel is active and ready for configuration options.</p>
+                </div>
               </div>
-            </div>
-
-            <div id="adminViewSettings" class="view hidden">
-              <h1>Settings</h1>
-              <div class="panel">
-                <p>System settings panel is active and ready for configuration options.</p>
-              </div>
-            </div>
-          </section>
+            </section>
+          </div>
         </div>
 
         <div id="addUserModal" class="modal hidden">
           <div class="modal-card">
             <div class="modal-head">
               <h3>Add New User</h3>
-              <button id="closeModalBtn" class="ghost" type="button">✕</button>
+              <button id="closeModalBtn" class="ghost" type="button">&#10005;</button>
             </div>
             <form id="userForm" class="modal-body">
               <input type="text" id="fullName" placeholder="Full Name" required />
               <input type="text" id="username" placeholder="Username" required />
               <div class="password-field">
                 <input type="password" id="password" placeholder="Password" required />
-                <button type="button" class="toggle-password" data-toggle-password="password" aria-label="Show password">👁</button>
+                <button type="button" class="toggle-password" data-toggle-password="password" aria-label="Show password">&#128065;</button>
               </div>
               <div class="password-field">
                 <input type="password" id="confirmPassword" placeholder="Confirm Password" required />
-                <button type="button" class="toggle-password" data-toggle-password="confirmPassword" aria-label="Show confirm password">👁</button>
+                <button type="button" class="toggle-password" data-toggle-password="confirmPassword" aria-label="Show confirm password">&#128065;</button>
               </div>
               <label for="roleSelect">Role:</label>
               <select id="roleSelect" required>
@@ -132,57 +1098,557 @@
         </div>
       </section>
 
-      <section id="professorDashboard" class="role-window card hidden">
-        <header class="window-title prof-title">
-          <h2 id="professorWelcome">Welcome, Prof. Santos!</h2>
-          <div class="icons">
-            <span>🔔</span>
-            <span>💬</span>
-            <span>👤</span>
+      <section id="professorDashboard" class="role-window dashboard-screen card hidden">
+        <div class="dashboard-hero">
+          <div class="dashboard-copy">
+            <h2 id="professorWelcome">Welcome, Prof. Santos!</h2>
+            <p class="dashboard-subtitle">Professor Room Availability Panel</p>
           </div>
-        </header>
-        <div class="inner">
-          <h3>Room Availability</h3>
-          <table>
-            <thead>
-              <tr>
-                <th>Room</th>
-                <th>Status</th>
-                <th>Action</th>
-              </tr>
-            </thead>
-            <tbody id="profRoomBody"></tbody>
-          </table>
-          <button id="profLogoutBtn" class="primary logout">Log Out</button>
+          <div class="hero-divider" aria-hidden="true"></div>
+          <div class="dashboard-brand">
+            <img src="Copilot_20260314_215117.png" alt="Decepticon Academy logo" />
+          </div>
+        </div>
+        <div class="dashboard-main">
+          <div class="inner">
+            <h3>Room Availability</h3>
+            <div class="table-scroll">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Room</th>
+                    <th>Status</th>
+                    <th>Action</th>
+                  </tr>
+                </thead>
+                <tbody id="profRoomBody"></tbody>
+              </table>
+            </div>
+            <button id="profLogoutBtn" class="primary logout">Log Out</button>
+          </div>
         </div>
       </section>
 
-      <section id="studentDashboard" class="role-window card hidden">
-        <header class="window-title student-title">
-          <h2>Student Room Availability</h2>
-          <div class="icons">
-            <span>🔔</span>
-            <span>💬</span>
-            <span>👤</span>
+      <section id="studentDashboard" class="role-window dashboard-screen card hidden">
+        <div class="dashboard-hero">
+          <div class="dashboard-copy">
+            <h2>
+              <span class="dashboard-title-line">STUDENT ROOM</span>
+              <span class="dashboard-title-line">AVAILABILITY</span>
+            </h2>
+            <p class="dashboard-subtitle">Live classroom access status</p>
           </div>
-        </header>
-        <div class="inner">
-          <h3>Room Availability</h3>
-          <table>
-            <thead>
-              <tr>
-                <th>Room</th>
-                <th>Status</th>
-              </tr>
-            </thead>
-            <tbody id="studentRoomBody"></tbody>
-          </table>
-          <p id="studentNote" class="student-note"></p>
-          <button id="studentLogoutBtn" class="primary logout">Log Out</button>
+          <div class="hero-divider" aria-hidden="true"></div>
+          <div class="dashboard-brand">
+            <img src="Copilot_20260314_215117.png" alt="Decepticon Academy logo" />
+          </div>
+        </div>
+        <div class="dashboard-main">
+          <div class="inner">
+            <h3>Room Availability</h3>
+            <div class="table-scroll">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Room</th>
+                    <th>Status</th>
+                    <th>Professor</th>
+                  </tr>
+                </thead>
+                <tbody id="studentRoomBody"></tbody>
+              </table>
+            </div>
+            <p id="studentNote" class="student-note"></p>
+            <button id="studentLogoutBtn" class="primary logout">Log Out</button>
+          </div>
         </div>
       </section>
     </main>
 
-    <script src="app.js"></script>
+    <script>
+const users = [
+  { name: "System Admin", username: "admin", password: "admin123", role: "Admin", status: "Active", lastLogin: "Mar 14" },
+  { name: "Recto Santos", username: "psantos", password: "prof123", role: "Professor", status: "Active", lastLogin: "Mar 14" },
+  { name: "Juan Dela Cruz", username: "jdc", password: "student123", role: "Student", status: "Active", lastLogin: "Mar 13" },
+];
+
+const rooms = (function() {
+  var roomList = [];
+  [1, 2, 3, 4, 5].forEach(function(floor) {
+    for (var unit = 1; unit <= 9; unit += 1) {
+      roomList.push({ room: floor * 100 + unit, occupiedBy: null });
+    }
+  });
+
+  var defaultOccupiedRoom = roomList.find(function(room) { return room.room === 407; });
+  if (defaultOccupiedRoom) {
+    defaultOccupiedRoom.occupiedBy = "psantos";
+  }
+
+  return roomList;
+})();
+
+let currentUser = null;
+
+const loginScreen = document.getElementById("loginScreen");
+const adminDashboard = document.getElementById("adminDashboard");
+const professorDashboard = document.getElementById("professorDashboard");
+const studentDashboard = document.getElementById("studentDashboard");
+
+const loginForm = document.getElementById("loginForm");
+const loginUsername = document.getElementById("loginUsername");
+const loginPassword = document.getElementById("loginPassword");
+const loginError = document.getElementById("loginError");
+
+const adminWelcome = document.getElementById("adminWelcome");
+const professorWelcome = document.getElementById("professorWelcome");
+
+const adminRoomBody = document.getElementById("adminRoomBody");
+const adminAssignForm = document.getElementById("adminAssignForm");
+const adminProfessorSelect = document.getElementById("adminProfessorSelect");
+const adminRoomSelect = document.getElementById("adminRoomSelect");
+const adminAssignError = document.getElementById("adminAssignError");
+const usersBody = document.getElementById("usersBody");
+const profRoomBody = document.getElementById("profRoomBody");
+const studentRoomBody = document.getElementById("studentRoomBody");
+const studentNote = document.getElementById("studentNote");
+
+const navItems = document.querySelectorAll("[data-admin-view]");
+const adminViews = {
+  dashboard: document.getElementById("adminViewDashboard"),
+  manage: document.getElementById("adminViewManage"),
+  reports: document.getElementById("adminViewReports"),
+  settings: document.getElementById("adminViewSettings"),
+};
+
+const addUserModal = document.getElementById("addUserModal");
+const openModalBtn = document.getElementById("openModalBtn");
+const closeModalBtn = document.getElementById("closeModalBtn");
+const cancelModalBtn = document.getElementById("cancelModalBtn");
+const userForm = document.getElementById("userForm");
+const userFormError = document.getElementById("userFormError");
+const passwordToggles = document.querySelectorAll("[data-toggle-password]");
+
+const adminLogoutBtn = document.getElementById("adminLogoutBtn");
+const profLogoutBtn = document.getElementById("profLogoutBtn");
+const studentLogoutBtn = document.getElementById("studentLogoutBtn");
+
+function getUserByUsername(username) {
+  return users.find((user) => user.username.toLowerCase() === username.toLowerCase());
+}
+
+function getLastName(fullName) {
+  var parts = fullName.trim().split(/\s+/);
+  return parts.length ? parts[parts.length - 1] : fullName;
+}
+
+function getDisplayName(user) {
+  if (!user) return "";
+  if (user.role === "Professor") {
+    return "Prof. " + getLastName(user.name);
+  }
+  return user.name;
+}
+
+function formatToday() {
+  return new Date().toLocaleDateString("en-US", { month: "short", day: "numeric" });
+}
+
+function hideAllDashboards() {
+  adminDashboard.classList.add("hidden");
+  professorDashboard.classList.add("hidden");
+  studentDashboard.classList.add("hidden");
+}
+
+function showLogin() {
+  currentUser = null;
+  hideAllDashboards();
+  loginScreen.classList.remove("hidden");
+  loginForm.reset();
+  passwordToggles.forEach(function(toggle) {
+    var input = document.getElementById(toggle.dataset.togglePassword);
+    if (input) {
+      input.type = "password";
+    }
+    toggle.textContent = "\uD83D\uDC41";
+  });
+  loginError.classList.add("hidden");
+  closeUserModal();
+}
+
+function showDashboardForUser(user) {
+  hideAllDashboards();
+  loginScreen.classList.add("hidden");
+
+  if (user.role === "Admin") {
+    adminWelcome.textContent = "Welcome, " + getDisplayName(user) + "!";
+    adminDashboard.classList.remove("hidden");
+    switchAdminView("dashboard");
+    renderAdminRooms();
+    renderUsersTable();
+    return;
+  }
+
+  if (user.role === "Professor") {
+    professorWelcome.textContent = "Welcome, " + getDisplayName(user) + "!";
+    professorDashboard.classList.remove("hidden");
+    renderProfessorRooms();
+    return;
+  }
+
+  studentDashboard.classList.remove("hidden");
+  renderStudentRooms();
+}
+
+function switchAdminView(view) {
+  Object.entries(adminViews).forEach(function(entry) {
+    var key = entry[0], element = entry[1];
+    element.classList.toggle("hidden", key !== view);
+  });
+  navItems.forEach(function(item) {
+    item.classList.toggle("active", item.dataset.adminView === view);
+  });
+}
+
+function getProfessorOptions() {
+  return users.filter(function(user) { return user.role === "Professor" && user.status === "Active"; });
+}
+
+function getAvailableRooms() {
+  return rooms.filter(function(room) { return !room.occupiedBy; });
+}
+
+function getRoomStatus(room) {
+  return room.occupiedBy ? "Occupied" : "Available";
+}
+
+function getOccupantName(username) {
+  if (!username) return "";
+  var user = getUserByUsername(username);
+  return user ? getDisplayName(user) : "Unknown";
+}
+
+function getRoomSectionLabel(roomNumber) {
+  var floor = Math.floor(roomNumber / 100);
+  var firstRoom = floor * 100 + 1;
+  var lastRoom = floor * 100 + 9;
+  return "Floor " + floor + "00 (" + firstRoom + "-" + lastRoom + ")";
+}
+
+function buildSectionRows(columnCount, rowRenderer) {
+  var currentFloor = 0;
+  var rows = [];
+
+  rooms.forEach(function(room) {
+    var floor = Math.floor(room.room / 100);
+    if (floor !== currentFloor) {
+      currentFloor = floor;
+      rows.push('<tr class="section-row"><td colspan="' + columnCount + '">' + getRoomSectionLabel(room.room) + '</td></tr>');
+    }
+    rows.push(rowRenderer(room));
+  });
+
+  return rows.join("");
+}
+
+function renderUsersTable() {
+  usersBody.innerHTML = users.map(function(user) {
+    var rowClass = user.status === "Inactive" ? "inactive-user-row" : "";
+    var pillClass = user.status === "Active" ? "status-active" : "status-inactive";
+    var actionCell;
+    if (user.username === "admin") {
+      actionCell = '<span class="action-note">Primary admin</span>';
+    } else if (user.status === "Active") {
+      actionCell = '<button class="danger-btn user-toggle-btn" data-user-action="deactivate" data-username="' + user.username + '">Deactivate</button>';
+    } else {
+      actionCell = '<button class="action-btn user-toggle-btn" data-user-action="reactivate" data-username="' + user.username + '">Reactivate</button>';
+    }
+    return '<tr class="' + rowClass + '">' +
+      '<td>' + getDisplayName(user) + '</td>' +
+      '<td>' + user.username + '</td>' +
+      '<td>' + user.role + '</td>' +
+      '<td><span class="status-pill ' + pillClass + '">' + user.status + '</span></td>' +
+      '<td>' + (user.lastLogin || "-") + '</td>' +
+      '<td>' + actionCell + '</td>' +
+      '</tr>';
+  }).join("");
+}
+
+function renderAdminAssignmentOptions() {
+  var professors = getProfessorOptions();
+  var availableRooms = getAvailableRooms();
+  var submitButton = adminAssignForm.querySelector('button[type="submit"]');
+
+  adminProfessorSelect.innerHTML = professors.length
+    ? '<option value="">Select professor</option>' + professors.map(function(user) {
+        return '<option value="' + user.username + '">' + getDisplayName(user) + '</option>';
+      }).join("")
+    : '<option value="">No active professors available</option>';
+
+  adminRoomSelect.innerHTML = availableRooms.length
+    ? '<option value="">Select room</option>' + availableRooms.map(function(room) {
+        return '<option value="' + room.room + '">Room ' + room.room + '</option>';
+      }).join("")
+    : '<option value="">No available rooms</option>';
+
+  adminProfessorSelect.disabled = !professors.length;
+  adminRoomSelect.disabled = !availableRooms.length;
+  submitButton.disabled = !professors.length || !availableRooms.length;
+}
+
+function releaseRoomsForUser(username) {
+  rooms.forEach(function(room) {
+    if (room.occupiedBy === username) room.occupiedBy = null;
+  });
+}
+
+function syncAllDashboards() {
+  renderAdminRooms();
+  renderUsersTable();
+  if (!professorDashboard.classList.contains("hidden") && currentUser && currentUser.role === "Professor") {
+    renderProfessorRooms();
+  }
+  if (!studentDashboard.classList.contains("hidden")) {
+    renderStudentRooms();
+  }
+}
+
+function renderAdminRooms() {
+  adminRoomBody.innerHTML = buildSectionRows(4, function(room) {
+    var isOccupied = Boolean(room.occupiedBy);
+    var actionBtn = isOccupied
+      ? '<button class="danger-btn" data-admin-action="release" data-room="' + room.room + '">Force Release</button>'
+      : '<span class="action-note">Assign from dropdown</span>';
+    return '<tr class="' + (isOccupied ? "occupied-row" : "") + '">' +
+      '<td>' + room.room + '</td>' +
+      '<td class="' + (isOccupied ? "occupied" : "available") + '">' + getRoomStatus(room) + '</td>' +
+      '<td>' + getOccupantName(room.occupiedBy) + '</td>' +
+      '<td>' + actionBtn + '</td>' +
+      '</tr>';
+  });
+  renderAdminAssignmentOptions();
+}
+
+function renderProfessorRooms() {
+  profRoomBody.innerHTML = buildSectionRows(3, function(room) {
+    var occupiedByCurrentUser = room.occupiedBy === currentUser.username;
+    var occupiedByOther = room.occupiedBy && !occupiedByCurrentUser;
+    var badge = occupiedByCurrentUser ? '<span class="badge">Occupied (You)</span>' : "";
+    var statusText;
+    if (occupiedByCurrentUser) {
+      statusText = "Occupied (You)";
+    } else if (room.occupiedBy) {
+      statusText = "Occupied (" + getOccupantName(room.occupiedBy) + ")";
+    } else {
+      statusText = "Available";
+    }
+    var actionCell;
+    if (occupiedByCurrentUser) {
+      actionCell = '<button class="action-btn" data-prof-action="checkout" data-room="' + room.room + '">Checked In</button>';
+    } else if (occupiedByOther) {
+      actionCell = "";
+    } else {
+      actionCell = '<button class="action-btn" data-prof-action="checkin" data-room="' + room.room + '">Check In</button>';
+    }
+    return '<tr class="' + (occupiedByCurrentUser ? "occupied-row" : "") + '">' +
+      '<td><strong>Room ' + room.room + '</strong>' + badge + '</td>' +
+      '<td class="' + (room.occupiedBy ? "occupied" : "available") + '">' + statusText + '</td>' +
+      '<td>' + actionCell + '</td>' +
+      '</tr>';
+  });
+}
+
+function renderStudentRooms() {
+  studentRoomBody.innerHTML = buildSectionRows(3, function(room) {
+    return '<tr class="' + (room.occupiedBy ? "occupied-row" : "") + '">' +
+      '<td><strong>Room ' + room.room + '</strong></td>' +
+      '<td class="' + (room.occupiedBy ? "occupied" : "available") + '">' + getRoomStatus(room) + '</td>' +
+      '<td>' + (room.occupiedBy ? getOccupantName(room.occupiedBy) : '-') + '</td>' +
+      '</tr>';
+  });
+  var occupiedRooms = rooms.filter(function(room) { return room.occupiedBy; });
+  studentNote.textContent = occupiedRooms.length
+    ? "\uD83D\uDDD3 Occupied rooms show the assigned professor in the table above."
+    : "\uD83D\uDDD3 All rooms are currently available.";
+}
+
+function rerenderVisibleDashboard() {
+  if (!currentUser) return;
+  if (currentUser.role === "Admin") { renderAdminRooms(); renderUsersTable(); }
+  if (currentUser.role === "Professor") renderProfessorRooms();
+  if (currentUser.role === "Student") renderStudentRooms();
+}
+
+function closeUserModal() {
+  addUserModal.classList.add("hidden");
+  userFormError.textContent = "";
+  userFormError.classList.add("hidden");
+}
+
+function openUserModal() {
+  addUserModal.classList.remove("hidden");
+  userFormError.textContent = "";
+  userFormError.classList.add("hidden");
+}
+
+loginForm.addEventListener("submit", function(event) {
+  event.preventDefault();
+  var username = loginUsername.value.trim();
+  var password = loginPassword.value;
+  var user = users.find(function(c) {
+    return c.username.toLowerCase() === username.toLowerCase() && c.password === password;
+  });
+  if (!user) {
+    loginError.textContent = "Invalid username or password.";
+    loginError.classList.remove("hidden");
+    return;
+  }
+  if (user.status !== "Active") {
+    loginError.textContent = "This account is inactive. Contact the admin.";
+    loginError.classList.remove("hidden");
+    return;
+  }
+  loginError.classList.add("hidden");
+  loginError.textContent = "Invalid username or password.";
+  currentUser = user;
+  currentUser.lastLogin = formatToday();
+  showDashboardForUser(user);
+});
+
+navItems.forEach(function(item) {
+  item.addEventListener("click", function() {
+    switchAdminView(item.dataset.adminView);
+  });
+});
+
+openModalBtn.addEventListener("click", openUserModal);
+closeModalBtn.addEventListener("click", closeUserModal);
+cancelModalBtn.addEventListener("click", closeUserModal);
+
+adminAssignForm.addEventListener("submit", function(event) {
+  event.preventDefault();
+  var professorUsername = adminProfessorSelect.value;
+  var roomNumber = Number(adminRoomSelect.value);
+  var selectedProfessor = getUserByUsername(professorUsername);
+  var selectedRoom = rooms.find(function(room) { return room.room === roomNumber; });
+
+  adminAssignError.textContent = "";
+  adminAssignError.classList.add("hidden");
+
+  if (!selectedProfessor || selectedProfessor.role !== "Professor" || selectedProfessor.status !== "Active") {
+    adminAssignError.textContent = "Select an active professor first.";
+    adminAssignError.classList.remove("hidden");
+    return;
+  }
+
+  if (!selectedRoom) {
+    adminAssignError.textContent = "Select an available room first.";
+    adminAssignError.classList.remove("hidden");
+    return;
+  }
+
+  if (selectedRoom.occupiedBy) {
+    adminAssignError.textContent = "That room is already occupied. Choose another room.";
+    adminAssignError.classList.remove("hidden");
+    renderAdminRooms();
+    return;
+  }
+
+  releaseRoomsForUser(selectedProfessor.username);
+  selectedRoom.occupiedBy = selectedProfessor.username;
+  adminAssignForm.reset();
+  syncAllDashboards();
+});
+
+passwordToggles.forEach(function(toggle) {
+  toggle.addEventListener("click", function() {
+    var input = document.getElementById(toggle.dataset.togglePassword);
+    if (!input) return;
+    var isVisible = input.type === "text";
+    input.type = isVisible ? "password" : "text";
+    toggle.textContent = isVisible ? "\uD83D\uDC41" : "\uD83D\uDE48";
+  });
+});
+
+userForm.addEventListener("submit", function(event) {
+  event.preventDefault();
+  var fullName = document.getElementById("fullName").value.trim();
+  var username = document.getElementById("username").value.trim();
+  var password = document.getElementById("password").value;
+  var confirmPassword = document.getElementById("confirmPassword").value;
+  var role = document.getElementById("roleSelect").value;
+
+  userFormError.textContent = "";
+  userFormError.classList.add("hidden");
+
+  if (!fullName || !username || !password || !confirmPassword || !role) return;
+
+  if (password !== confirmPassword) {
+    userFormError.textContent = "Passwords do not match.";
+    userFormError.classList.remove("hidden");
+    return;
+  }
+
+  if (getUserByUsername(username)) {
+    userFormError.textContent = "Username already exists. Use a different username.";
+    userFormError.classList.remove("hidden");
+    return;
+  }
+
+  users.push({ name: fullName, username: username, password: password, role: role, status: "Active", lastLogin: "-" });
+  userForm.reset();
+  passwordToggles.forEach(function(toggle) { toggle.textContent = "\uD83D\uDC41"; });
+  closeUserModal();
+  rerenderVisibleDashboard();
+});
+
+adminRoomBody.addEventListener("click", function(event) {
+  var target = event.target;
+  if (!(target instanceof HTMLButtonElement)) return;
+  var roomNumber = Number(target.dataset.room);
+  var action = target.dataset.adminAction;
+  var room = rooms.find(function(item) { return item.room === roomNumber; });
+  if (!room) return;
+  if (action === "release") room.occupiedBy = null;
+  syncAllDashboards();
+});
+
+profRoomBody.addEventListener("click", function(event) {
+  var target = event.target;
+  if (!(target instanceof HTMLButtonElement)) return;
+  var roomNumber = Number(target.dataset.room);
+  var action = target.dataset.profAction;
+  var selectedRoom = rooms.find(function(item) { return item.room === roomNumber; });
+  if (!selectedRoom) return;
+  if (action === "checkout" && selectedRoom.occupiedBy === currentUser.username) {
+    selectedRoom.occupiedBy = null;
+  }
+  if (action === "checkin" && !selectedRoom.occupiedBy) {
+    rooms.forEach(function(room) { if (room.occupiedBy === currentUser.username) room.occupiedBy = null; });
+    selectedRoom.occupiedBy = currentUser.username;
+  }
+  renderProfessorRooms();
+  if (!adminDashboard.classList.contains("hidden")) renderAdminRooms();
+  if (!studentDashboard.classList.contains("hidden")) renderStudentRooms();
+});
+
+usersBody.addEventListener("click", function(event) {
+  var target = event.target;
+  if (!(target instanceof HTMLButtonElement)) return;
+  var username = target.dataset.username;
+  var action = target.dataset.userAction;
+  var user = getUserByUsername(username);
+  if (!user || user.username === "admin") return;
+  if (action === "deactivate") { user.status = "Inactive"; releaseRoomsForUser(user.username); }
+  if (action === "reactivate") user.status = "Active";
+  syncAllDashboards();
+});
+
+adminLogoutBtn.addEventListener("click", showLogin);
+profLogoutBtn.addEventListener("click", showLogin);
+studentLogoutBtn.addEventListener("click", showLogin);
+
+showLogin();
+    </script>
   </body>
 </html>
