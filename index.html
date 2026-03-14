@@ -1,0 +1,188 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>ADBMS Room Availability</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <main class="page">
+      <section id="loginScreen" class="login-screen card">
+        <h1>ADBMS Login</h1>
+        <p class="subtitle">Automated Room Availability Dashboard</p>
+        <form id="loginForm" class="login-form">
+          <input id="loginUsername" type="text" placeholder="Username" required />
+          <input id="loginPassword" type="password" placeholder="Password" required />
+          <button type="submit" class="primary">Log In</button>
+          <p id="loginError" class="error-msg hidden">Invalid username or password.</p>
+        </form>
+        <div class="demo-accounts">
+          <strong>Demo Accounts:</strong>
+          <p>Admin: <span>admin / admin123</span></p>
+          <p>Professor: <span>psantos / prof123</span></p>
+          <p>Student: <span>jdc / student123</span></p>
+        </div>
+      </section>
+
+      <section id="adminDashboard" class="admin-window card hidden">
+        <header class="window-title admin-title">
+          <h2>Admin Dashboard</h2>
+          <div class="icons">
+            <span>👤</span>
+            <span>💬</span>
+            <span>🔔</span>
+          </div>
+        </header>
+
+        <div class="admin-body">
+          <aside class="sidebar">
+            <button class="nav-item active" data-admin-view="dashboard">🏠 Dashboard</button>
+            <button class="nav-item" data-admin-view="manage">👥 Manage Users</button>
+            <button class="nav-item" data-admin-view="reports">📨 Reports</button>
+            <button class="nav-item" data-admin-view="settings">⚙ Settings</button>
+            <button id="adminLogoutBtn" class="nav-item">↩ Log Out</button>
+          </aside>
+
+          <section class="content">
+            <div id="adminViewDashboard" class="view">
+              <h1 id="adminWelcome">Welcome, Admin!</h1>
+              <div class="panel">
+                <h3>Room Availability</h3>
+                <table>
+                  <thead>
+                    <tr>
+                      <th>Room</th>
+                      <th>Status</th>
+                      <th>Current Professor</th>
+                      <th>Action</th>
+                    </tr>
+                  </thead>
+                  <tbody id="adminRoomBody"></tbody>
+                </table>
+              </div>
+            </div>
+
+            <div id="adminViewManage" class="view hidden">
+              <div class="manage-header">
+                <h1>Manage Users</h1>
+                <button id="openModalBtn" class="primary">+ Add New User</button>
+              </div>
+              <table>
+                <thead>
+                  <tr>
+                    <th>Name</th>
+                    <th>Username</th>
+                    <th>Role</th>
+                    <th>Status</th>
+                    <th>Last Login</th>
+                    <th>Actions</th>
+                  </tr>
+                </thead>
+                <tbody id="usersBody"></tbody>
+              </table>
+            </div>
+
+            <div id="adminViewReports" class="view hidden">
+              <h1>Reports</h1>
+              <div class="panel">
+                <p>Room activity report view is ready for backend integration.</p>
+              </div>
+            </div>
+
+            <div id="adminViewSettings" class="view hidden">
+              <h1>Settings</h1>
+              <div class="panel">
+                <p>System settings panel is active and ready for configuration options.</p>
+              </div>
+            </div>
+          </section>
+        </div>
+
+        <div id="addUserModal" class="modal hidden">
+          <div class="modal-card">
+            <div class="modal-head">
+              <h3>Add New User</h3>
+              <button id="closeModalBtn" class="ghost" type="button">✕</button>
+            </div>
+            <form id="userForm" class="modal-body">
+              <input type="text" id="fullName" placeholder="Full Name" required />
+              <input type="text" id="username" placeholder="Username" required />
+              <div class="password-field">
+                <input type="password" id="password" placeholder="Password" required />
+                <button type="button" class="toggle-password" data-toggle-password="password" aria-label="Show password">👁</button>
+              </div>
+              <div class="password-field">
+                <input type="password" id="confirmPassword" placeholder="Confirm Password" required />
+                <button type="button" class="toggle-password" data-toggle-password="confirmPassword" aria-label="Show confirm password">👁</button>
+              </div>
+              <label for="roleSelect">Role:</label>
+              <select id="roleSelect" required>
+                <option value="Professor">Professor</option>
+                <option value="Student">Student</option>
+                <option value="Admin">Admin</option>
+              </select>
+              <p id="userFormError" class="form-error hidden"></p>
+              <div class="form-actions">
+                <button type="submit" class="primary">Add User</button>
+                <button type="button" id="cancelModalBtn" class="secondary">Cancel</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      </section>
+
+      <section id="professorDashboard" class="role-window card hidden">
+        <header class="window-title prof-title">
+          <h2 id="professorWelcome">Welcome, Prof. Santos!</h2>
+          <div class="icons">
+            <span>🔔</span>
+            <span>💬</span>
+            <span>👤</span>
+          </div>
+        </header>
+        <div class="inner">
+          <h3>Room Availability</h3>
+          <table>
+            <thead>
+              <tr>
+                <th>Room</th>
+                <th>Status</th>
+                <th>Action</th>
+              </tr>
+            </thead>
+            <tbody id="profRoomBody"></tbody>
+          </table>
+          <button id="profLogoutBtn" class="primary logout">Log Out</button>
+        </div>
+      </section>
+
+      <section id="studentDashboard" class="role-window card hidden">
+        <header class="window-title student-title">
+          <h2>Student Room Availability</h2>
+          <div class="icons">
+            <span>🔔</span>
+            <span>💬</span>
+            <span>👤</span>
+          </div>
+        </header>
+        <div class="inner">
+          <h3>Room Availability</h3>
+          <table>
+            <thead>
+              <tr>
+                <th>Room</th>
+                <th>Status</th>
+              </tr>
+            </thead>
+            <tbody id="studentRoomBody"></tbody>
+          </table>
+          <p id="studentNote" class="student-note"></p>
+          <button id="studentLogoutBtn" class="primary logout">Log Out</button>
+        </div>
+      </section>
+    </main>
+
+    <script src="app.js"></script>
+  </body>
+</html>
