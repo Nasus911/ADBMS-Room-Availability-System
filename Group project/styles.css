@@ -437,3 +437,88 @@ select {
     font-size: 30px;
   }
 }
+
+/* Motion & effects improvements */
+.primary,
+.action-btn,
+.danger-btn {
+  transition: transform 160ms ease, box-shadow 160ms ease, opacity 180ms ease;
+  will-change: transform, box-shadow;
+}
+.primary:hover,
+.action-btn:hover,
+.danger-btn:hover {
+  transform: translateY(-3px) scale(1.02);
+  box-shadow: 0 8px 20px rgba(19, 38, 104, 0.12);
+}
+
+.status-pill {
+  transition: transform 160ms ease, box-shadow 160ms ease, opacity 180ms ease;
+  will-change: transform, box-shadow;
+}
+.status-pill:hover {
+  transform: translateY(-3px) scale(1.02);
+  box-shadow: 0 8px 20px rgba(19, 38, 104, 0.12);
+}
+
+@keyframes rowFlash {
+  0% { background-color: rgba(255,216,120,0.95); }
+  60% { background-color: rgba(255,236,180,0.6); }
+  100% { background-color: transparent; }
+}
+.row-flash { animation: rowFlash 900ms ease forwards; }
+
+@keyframes logoFloat {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-8px); }
+}
+.login-brand img,
+.dashboard-brand img,
+.logo {
+  animation: logoFloat 5s ease-in-out infinite;
+}
+
+/* Respect reduced motion preference */
+@media (prefers-reduced-motion: reduce) {
+  .primary, .action-btn, .danger-btn, .status-pill, .row-flash, .login-brand img, .dashboard-brand img, .logo {
+    transition: none !important;
+    animation: none !important;
+  }
+}
+
+/* small transient action note (admin feedback) */
+.action-note-toast {
+  position: fixed;
+  top: 86px;
+  right: 18px;
+  z-index: 9998;
+  background: linear-gradient(180deg,#fff,#f6f9ff);
+  color: #15335f;
+  padding: 10px 12px;
+  border-radius: 8px;
+  box-shadow: 0 8px 24px rgba(18,31,54,0.12);
+  font-weight: 700;
+  pointer-events: none;
+  opacity: 0;
+  transform: translateY(-6px);
+  transition: opacity 260ms ease, transform 260ms ease;
+}
+.action-note-toast.visible { opacity: 1; transform: translateY(0); }
+
+/* Student info block shown in student dashboard header */
+.student-info {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  color: #eef5ff;
+}
+.student-name {
+  font-weight: 800;
+  font-size: 20px;
+  letter-spacing: 0.02em;
+}
+.student-meta {
+  font-size: 14px;
+  color: rgba(238,245,255,0.85);
+  font-weight: 600;
+}

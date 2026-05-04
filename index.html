@@ -8,17 +8,25 @@
 @import url("https://fonts.googleapis.com/css2?family=League+Spartan:wght@500;700;800&family=Manrope:wght@400;500;700&display=swap");
 
 :root {
-  --bg: #eceff4;
-  --card: #f8f9fc;
-  --line: #d7dbe4;
-  --dark-blue: #1a3f6a;
-  --text: #1f2733;
-  --available: #2f8f43;
-  --danger: #d72732;
+  /* color tokens (accessible palette) */
+  --bg: #F1F5F9;
+  --card: #FFFFFF;
+  --line: #E6EDF6;
+  --dark-blue: #1F4A86;
+  --text: #142433;
+  --muted: #6B7280;
+  --available: #2F8F43;
+  --danger: #D72732;
+  --primary: #1F4A86;
+  --accent: #FFC844;
+  --info: #0B84FF;
   --hero-start: #123767;
   --hero-mid: #1f4a86;
   --hero-end: #2e66ae;
   --hero-highlight: #ffc844;
+  /* fonts */
+  --font-sans: 'Manrope', Inter, system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial;
+  --font-display: 'League Spartan', var(--font-sans);
 }
 
 * {
@@ -27,10 +35,13 @@
 
 body {
   margin: 0;
-  font-family: "Manrope", "Segoe UI", Tahoma, sans-serif;
+  font-family: var(--font-sans);
   background: var(--bg);
   color: var(--text);
 }
+
+/* Headings use display font for stronger hierarchy */
+h1, h2, h3 { font-family: var(--font-display); }
 
 .page {
   width: min(1320px, 96vw);
@@ -217,6 +228,35 @@ body {
   z-index: 1;
 }
 
+/* Motion & effects */
+.status-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 10px;
+  border-radius: 999px;
+  font-weight: 600;
+  font-size: 13px;
+  transition: transform 160ms ease, box-shadow 160ms ease, opacity 180ms ease;
+  will-change: transform, box-shadow;
+}
+.status-pill:hover { transform: translateY(-3px) scale(1.02); box-shadow: 0 8px 20px rgba(19,38,104,0.12); }
+.status-available { background: rgba(47,143,67,0.12); color: var(--available); }
+.status-occupied { background: rgba(215,39,50,0.08); color: var(--danger); }
+
+@keyframes rowFlash {
+  0% { background-color: rgba(255,216,120,0.95); }
+  60% { background-color: rgba(255,236,180,0.6); }
+  100% { background-color: transparent; }
+}
+.row-flash { animation: rowFlash 900ms ease forwards; }
+
+/* Respect user's reduced motion preference */
+@media (prefers-reduced-motion: reduce) {
+  .status-pill, .row-flash { transition: none !important; animation: none !important; }
+  .dashboard-brand, .login-brand { animation: none !important; }
+}
+
 .login-body {
   width: min(520px, 100%);
   margin: 14px auto 0;
@@ -396,10 +436,78 @@ body {
   color: #e4efff;
 }
 
+.nav-item {
+  transition: background-color 160ms ease, transform 120ms ease, box-shadow 160ms ease;
+}
+
+/* subtle hover for pointer users; do not override active style */
+.nav-item:not(.active):hover {
+  background: rgba(255, 255, 255, 0.04);
+  transform: translateY(-1px);
+  box-shadow: 0 6px 18px rgba(8, 24, 51, 0.06);
+}
+
+/* keyboard focus visible state */
+.nav-item:focus-visible {
+  outline: 2px solid rgba(255, 200, 68, 0.9);
+  outline-offset: 2px;
+}
+
 .nav-item.active {
   background: rgba(255, 208, 87, 0.95);
   color: #14315d;
   font-weight: 600;
+}
+
+/* UI polish: row and card hover, button lift, and subtle animations */
+.card,
+.dashboard-main,
+.panel {
+  transition: transform 220ms ease, box-shadow 220ms ease;
+}
+.card:hover,
+.dashboard-main:hover,
+.panel:hover {
+  transform: translateY(-6px);
+  box-shadow: 0 18px 36px rgba(16, 36, 77, 0.12);
+}
+
+/* Table row hover and entrance animation */
+.table-scroll tbody tr {
+  transition: transform 160ms ease, box-shadow 160ms ease, background-color 160ms ease;
+  will-change: transform, box-shadow, background-color;
+  animation: rowIn 260ms ease both;
+}
+.table-scroll tbody tr:hover {
+  transform: translateY(-6px);
+  box-shadow: 0 8px 20px rgba(8, 24, 51, 0.06);
+}
+
+@keyframes rowIn {
+  from { opacity: 0; transform: translateY(6px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* Buttons: subtle scale + shadow on hover, strong focus state */
+.primary:hover, .action-btn:hover, .danger-btn:hover, .secondary:hover {
+  transform: translateY(-3px) scale(1.01);
+  box-shadow: 0 10px 20px rgba(15, 32, 58, 0.12);
+}
+.primary:focus-visible, .action-btn:focus-visible, .danger-btn:focus-visible, .secondary:focus-visible {
+  outline: 3px solid rgba(255,200,68,0.18);
+  outline-offset: 3px;
+}
+
+/* Status pill micro-interaction */
+.status-pill {
+  transition: transform 140ms ease, box-shadow 140ms ease, background-color 160ms ease;
+}
+.status-active:hover { transform: translateY(-2px); box-shadow: 0 6px 12px rgba(47,143,67,0.12); }
+.status-inactive:hover { transform: translateY(-2px); box-shadow: 0 6px 12px rgba(89,97,115,0.08); }
+
+/* subtle animated shimmer for hero banner highlight */
+.login-screen::before, .dashboard-screen::before {
+  transition: opacity 600ms ease, transform 600ms ease;
 }
 
 .content {
@@ -417,6 +525,32 @@ body {
   border-radius: 8px;
   background: #fefefe;
   padding: 14px;
+}
+
+/* Small dashboard stat cards shown above tables */
+.stat-cards {
+  display: flex;
+  gap: 12px;
+  margin: 10px 0 12px;
+}
+.stat-card {
+  flex: 1;
+  background: linear-gradient(180deg, #fbfdff, #eef5ff);
+  border: 1px solid var(--line);
+  padding: 12px 14px;
+  border-radius: 8px;
+  text-align: center;
+}
+.stat-card .stat-title {
+  font-size: 13px;
+  font-weight: 700;
+  color: #21406c;
+  margin-bottom: 6px;
+}
+.stat-card .stat-value {
+  font-size: 28px;
+  font-weight: 800;
+  color: #15335f;
 }
 
 .panel h3,
@@ -711,6 +845,14 @@ select {
   background: #fff;
 }
 
+.floor-filter {
+  height: 30px;
+  font-size: 13px;
+  padding: 4px 8px;
+  border-radius: 6px;
+  margin-left: 8px;
+}
+
 .password-field {
   position: relative;
 }
@@ -926,10 +1068,108 @@ select {
     width: 100%;
   }
 }
+
+/* Toast / Notification styles */
+.toast-container {
+  position: fixed;
+  top: 18px;
+  right: 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  z-index: 9999;
+  pointer-events: none;
+}
+.toast {
+  pointer-events: auto;
+  min-width: 260px;
+  max-width: 360px;
+  background: linear-gradient(180deg, #ffffff, #f3f6fb);
+  color: var(--text);
+  border-radius: 10px;
+  box-shadow: 0 8px 20px rgba(16,24,40,0.12);
+  padding: 10px 12px;
+  border-left: 4px solid var(--hero-highlight);
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+}
+.toast .title { font-weight: 700; margin: 0; font-size: 14px; }
+.toast .msg { margin: 2px 0 0; font-size: 13px; color: #253040; }
+.toast .actions { margin-left: auto; display:flex; gap:8px; }
+.toast .btn { background: transparent; border: none; color: var(--hero-mid); cursor: pointer; font-weight:600; }
+.toast.fade-out { opacity: 0; transform: translateY(-6px); transition: all 260ms ease; }
+.flash-highlight { animation: flashBg 1.2s ease; }
+@keyframes flashBg {
+  0% { box-shadow: 0 0 0 0 rgba(255,200,0,0.0); background-color: rgba(255,250,220,0.0); }
+  10% { background-color: rgba(255,250,220,0.95); }
+  60% { background-color: rgba(255,250,220,0.4); }
+  100% { background-color: transparent; }
+}
+/* Legend and occupied pulse */
+.legend { display:flex; gap:12px; align-items:center; margin-left:10px; }
+.legend .item { display:flex; gap:6px; align-items:center; font-weight:600; color:var(--muted); }
+.legend .dot { width:12px; height:12px; border-radius:50%; display:inline-block; }
+.legend .available { background: var(--available); }
+.legend .occupied { background: var(--danger); }
+.legend .label { font-size:13px; color:var(--muted); }
+.occupied-row { animation: occupiedPulse 3.6s ease-in-out infinite; }
+@keyframes occupiedPulse { 0% { box-shadow: 0 0 0 0 rgba(215,39,50,0.06);} 50% { box-shadow: 0 10px 30px rgba(215,39,50,0.03);} 100% { box-shadow: 0 0 0 0 rgba(215,39,50,0.0);} }
+
+/* Status pill styles (accessible, icon + label) */
+.status-pill { display:inline-flex; gap:8px; align-items:center; padding:6px 10px; border-radius:999px; font-weight:700; font-size:13px; }
+.status-available { background: rgba(47,143,67,0.12); color: #1b5e34; }
+.status-occupied { background: rgba(215,39,50,0.12); color: #7b1216; }
+.status-info { background: rgba(11,132,255,0.08); color: var(--info); }
+
+/* Ensure focus visibility for interactive controls */
+:focus-visible { outline: 3px solid rgba(255,200,68,0.18); outline-offset: 2px; }
+
+/* Respect reduced-motion preference */
+@media (prefers-reduced-motion: reduce) {
+  * { animation-duration: 0.001ms !important; animation-iteration-count: 1 !important; transition-duration: 0.001ms !important; }
+}
+
+/* Global toolbar for demo controls */
+.global-toolbar { display:flex; align-items:center; gap:8px; justify-content:flex-end; padding:6px 10px; }
+.global-toolbar .ghost { border-radius:6px; padding:6px 10px; background:transparent; }
+.global-toolbar .ghost:hover { background: rgba(255,255,255,0.04); transform: translateY(-2px); }
+/* last-action note */
+.last-action-note {
+  margin-left: 12px;
+  background: rgba(255,255,255,0.95);
+  color: #15335f;
+  padding: 6px 10px;
+  border-radius: 8px;
+  font-weight:700;
+  box-shadow: 0 6px 18px rgba(16,24,40,0.08);
+  opacity: 0;
+  transform: translateY(-6px);
+  transition: opacity 260ms ease, transform 260ms ease;
+}
+.last-action-note.visible { opacity: 1; transform: translateY(0); }
+    .student-info {
+      display:flex;
+      flex-direction:column;
+      gap:4px;
+      color: #eef5ff;
+    }
+    .student-name { font-weight:800; font-size:20px; letter-spacing:0.02em; }
+    .student-meta { font-size:14px; color: rgba(238,245,255,0.85); font-weight:600; }
+
     </style>
   </head>
   <body>
+    <!-- Toast container for in-page notifications -->
+    <div id="toastContainer" class="toast-container" aria-live="polite"></div>
     <main class="page">
+      <div class="global-toolbar" role="region" aria-label="Demo data toolbar" style="margin-bottom:12px;">
+        <div style="flex:1"></div>
+        <input id="importFile" type="file" accept="application/json" style="display:none;" />
+        <button id="exportDataBtn" class="ghost" aria-label="Export demo data" title="Export demo data">Export</button>
+        <button id="importDataBtn" class="ghost" aria-label="Import demo data" title="Import demo data">Import</button>
+        <button id="loadSampleBtn" class="ghost" aria-label="Load sample data" title="Load sample data">Load Sample</button>
+      </div>
       <section id="loginScreen" class="login-screen card">
         <div class="login-hero">
           <div class="login-copy">
@@ -998,6 +1238,24 @@ select {
             <section class="content">
               <div id="adminViewDashboard" class="view">
                 <h1 id="adminWelcome">Welcome, Admin!</h1>
+                <div class="stat-cards" aria-hidden="false">
+                  <div class="stat-card">
+                    <div class="stat-title">Rooms Available</div>
+                    <div id="roomsAvailableCount" class="stat-value">0</div>
+                  </div>
+                  <div class="stat-card">
+                    <div class="stat-title">Rooms Occupied</div>
+                    <div id="roomsOccupiedCount" class="stat-value">0</div>
+                  </div>
+                  <div class="stat-card">
+                    <div class="stat-title">Current Utilization</div>
+                    <div id="utilizationPercent" class="stat-value">0%</div>
+                  </div>
+                  <div class="stat-card">
+                    <div class="stat-title">Today's Check‑ins</div>
+                    <div id="todaysCheckinsCount" class="stat-value">0</div>
+                  </div>
+                </div>
                 <div class="panel">
                   <div class="panel-header">
                     <h3>Room Availability</h3>
@@ -1016,11 +1274,12 @@ select {
                     <table>
                       <thead>
                         <tr>
-                          <th>Room</th>
-                          <th>Status</th>
-                          <th>Current Professor</th>
-                          <th>Action</th>
-                        </tr>
+                            <th>Rooms <select id="adminFloorSelect" class="floor-filter"><option value="">All</option></select></th>
+                            <th>Status <select id="adminStatusSelect" class="status-filter"><option value="">All</option></select></th>
+                            <th>Current Professor</th>
+                            <th>Since</th>
+                            <th>Action</th>
+                          </tr>
                       </thead>
                       <tbody id="adminRoomBody"></tbody>
                     </table>
@@ -1096,6 +1355,17 @@ select {
             </form>
           </div>
         </div>
+        <div id="studentHistoryModal" class="modal hidden" aria-hidden="true">
+          <div class="modal-card">
+            <div class="modal-head">
+              <h3>Recent Check-ins</h3>
+              <button id="studentHistoryClose" class="ghost" type="button">✕</button>
+            </div>
+            <div class="modal-body" style="max-height:60vh;overflow:auto;padding:12px;">
+              <!-- populated dynamically -->
+            </div>
+          </div>
+        </div>
       </section>
 
       <section id="professorDashboard" class="role-window dashboard-screen card hidden">
@@ -1112,12 +1382,31 @@ select {
         <div class="dashboard-main">
           <div class="inner">
             <h3>Room Availability</h3>
+            <div class="stat-cards" aria-hidden="false">
+              <div class="stat-card">
+                <div class="stat-title">Assigned / Checked In (You)</div>
+                <div id="profAssignedRoom" class="stat-value">-</div>
+              </div>
+              <div class="stat-card">
+                <div class="stat-title">Schedule Time</div>
+                <div id="profScheduleTime" class="stat-value">Schedule Time</div>
+              </div>
+              <div class="stat-card">
+                <div class="stat-title">Section/Block</div>
+                <div id="profSectionBlock" class="stat-value">Section/Block</div>
+              </div>
+              <div class="stat-card">
+                <div class="stat-title">My Utilization</div>
+                <div id="profUtilizationPercent" class="stat-value">0%</div>
+              </div>
+            </div>
             <div class="table-scroll">
               <table>
                 <thead>
                   <tr>
-                    <th>Room</th>
+                  <th>Rooms <select id="profFloorSelect" class="floor-filter"><option value="">All</option></select></th>
                     <th>Status</th>
+                    <th>Since</th>
                     <th>Action</th>
                   </tr>
                 </thead>
@@ -1136,7 +1425,10 @@ select {
               <span class="dashboard-title-line">STUDENT ROOM</span>
               <span class="dashboard-title-line">AVAILABILITY</span>
             </h2>
-            <p class="dashboard-subtitle">Live classroom access status</p>
+            <div id="studentInfo" class="student-info">
+              <div class="student-name">Student Name</div>
+              <div class="student-meta">Block • Program</div>
+            </div>
           </div>
           <div class="hero-divider" aria-hidden="true"></div>
           <div class="dashboard-brand">
@@ -1146,19 +1438,34 @@ select {
         <div class="dashboard-main">
           <div class="inner">
             <h3>Room Availability</h3>
+            <div class="assign-toolbar" style="margin-bottom:10px;">
+              <label for="studentFloorSelect" style="font-weight:700;margin-right:8px;color:#eef5ff">Filter:</label>
+              <select id="studentFloorSelect" class="floor-filter" aria-label="Filter by floor"></select>
+              <input id="studentSearch" type="search" placeholder="Search room" style="margin-left:8px;padding:6px 10px;border-radius:6px;border:1px solid #cdd2dc;" aria-label="Search room number or professor" />
+              <button id="studentHistoryBtn" class="ghost" style="margin-left:8px;">History</button>
+              <div class="legend" aria-hidden="false" style="margin-left:12px;">
+                <div class="item"><span class="dot available" aria-hidden="true"></span>Available</div>
+                <div class="item"><span class="dot occupied" aria-hidden="true"></span>Occupied</div>
+              </div>
+            </div>
             <div class="table-scroll">
               <table>
                 <thead>
                   <tr>
-                    <th>Room</th>
+                    <th></th>
+                    <th>Rooms</th>
                     <th>Status</th>
+                    <th>Since</th>
                     <th>Professor</th>
                   </tr>
                 </thead>
                 <tbody id="studentRoomBody"></tbody>
               </table>
             </div>
-            <p id="studentNote" class="student-note"></p>
+            <p id="studentNote" class="student-note" aria-live="polite"></p>
+            <div style="display:flex;align-items:center;gap:12px;margin-top:8px;">
+              <div id="lastUpdated" style="color:#5c6475;font-weight:600">Last updated: -</div>
+            </div>
             <button id="studentLogoutBtn" class="primary logout">Log Out</button>
           </div>
         </div>
@@ -1188,7 +1495,243 @@ const rooms = (function() {
   return roomList;
 })();
 
+// Persistent rooms/checkins keys
+const ROOMS_KEY = 'adbms_rooms_v1';
+const CHECKINS_KEY = 'adbms_checkins_v1';
+const LAST_CHANGE_KEY = 'adbms_last_change_v1';
+
+// in-memory checkins log
+let checkins = [];
+
+function saveRooms() {
+  try { localStorage.setItem(ROOMS_KEY, JSON.stringify(rooms)); } catch (e) {}
+}
+
+function announceRoomChange(roomNumber) {
+  try {
+    var payload = { room: roomNumber, ts: Date.now() };
+    localStorage.setItem(LAST_CHANGE_KEY, JSON.stringify(payload));
+  } catch (e) {}
+}
+
+function loadRooms() {
+  try {
+    var raw = localStorage.getItem(ROOMS_KEY);
+    if (raw) {
+      var parsed = JSON.parse(raw);
+      if (Array.isArray(parsed)) {
+        // shallow replace contents while keeping reference
+        rooms.length = 0;
+        parsed.forEach(function(r){ rooms.push(r); });
+      }
+    } else {
+      // initialize storage with current rooms
+      saveRooms();
+    }
+  } catch (e) {}
+}
+
+function saveCheckins() {
+  try { localStorage.setItem(CHECKINS_KEY, JSON.stringify(checkins)); } catch (e) {}
+}
+
+function loadCheckins() {
+  try {
+    var raw = localStorage.getItem(CHECKINS_KEY);
+    checkins = raw ? JSON.parse(raw) : checkins;
+  } catch (e) { /* keep in-memory */ }
+}
+
+// load persisted state if present
+loadRooms();
+loadCheckins();
+
 let currentUser = null;
+
+// Track check-ins (keeps simple in-memory log of occupancy events)
+// (checkins declared earlier)
+
+// Perform a best-effort cleanup of any lingering test data created by earlier debug helpers
+try { cleanupTestData(); } catch (e) { /* ignore */ }
+
+// Notifications & scheduled reminders
+let scheduledCheckins = [];
+
+// persistent notifications (per-user)
+let notifications = [];
+const NOTIFY_KEY = 'adbms_notifications_v1';
+
+function loadNotifications() {
+  try {
+    var raw = localStorage.getItem(NOTIFY_KEY);
+    notifications = raw ? JSON.parse(raw) : [];
+  } catch (e) { notifications = []; }
+}
+
+function saveNotifications() {
+  try { localStorage.setItem(NOTIFY_KEY, JSON.stringify(notifications)); } catch (e) {}
+}
+
+loadNotifications();
+
+function requestNotificationPermission() {
+  if (!('Notification' in window)) return Promise.resolve('unsupported');
+  return Notification.requestPermission();
+}
+
+function showToast(title, msg, opts) {
+  opts = opts || {};
+  var container = document.getElementById('toastContainer');
+  if (!container) return;
+  var toast = document.createElement('div');
+  toast.className = 'toast';
+  if (opts.id) toast.dataset.notifyId = opts.id;
+  toast.innerHTML = '<div><p class="title">' + (title||'') + '</p><p class="msg">' + (msg||'') + '</p></div>' +
+    '<div class="actions"><button class="btn dismiss">Dismiss</button></div>';
+  container.appendChild(toast);
+  var remove = function() {
+    toast.classList.add('fade-out');
+    setTimeout(function(){ container.removeChild(toast); }, 260);
+  };
+  toast.querySelector('.dismiss').addEventListener('click', function() {
+    var id = toast.dataset.notifyId;
+    if (id) {
+      var n = notifications.find(function(x){ return x.id === id; });
+      if (n) { n.read = true; saveNotifications(); }
+    }
+    remove();
+  });
+  setTimeout(remove, opts.timeout || 6000);
+}
+
+function notify(title, msg, opts) {
+  opts = opts || {};
+  var id = null;
+  if (opts.user) {
+    id = 'n_' + Date.now() + '_' + Math.floor(Math.random()*1000);
+    notifications.push({ id: id, user: opts.user, title: title, msg: msg, ts: Date.now(), read: false });
+    saveNotifications();
+  }
+
+  if ('Notification' in window && Notification.permission === 'granted') {
+    try {
+      var n = new Notification(title, { body: msg });
+      n.onclick = function() { window.focus(); };
+    } catch (e) {
+      // fall back to in-page toast
+    }
+  }
+
+  showToast(title, msg, Object.assign({}, opts, { id: id }));
+}
+
+function showPendingNotificationsForUser(user) {
+  try {
+    if (!user || !notifications || !Array.isArray(notifications)) return;
+    var pending = notifications.filter(function(n) { return n.user === user.username && !n.read; });
+    pending.forEach(function(n) {
+      // surface as in-page toast; mark as read
+      showToast(n.title || 'Notification', n.msg || '');
+      n.read = true;
+    });
+    if (pending.length) saveNotifications();
+  } catch (e) {
+    // non-fatal
+  }
+}
+
+function recordOccupancyChange(roomNumber, previousOccupiedBy, newOccupiedBy) {
+  if (previousOccupiedBy === newOccupiedBy) return;
+  if (!previousOccupiedBy && newOccupiedBy) {
+    // record date in YYYY-MM-DD for easy daily counting
+    var d = new Date();
+    var todayKey = d.toISOString().slice(0,10);
+    checkins.push({ room: roomNumber, user: newOccupiedBy, date: todayKey, ts: Date.now() });
+    // notify about the check-in and persist for the professor
+    var user = getUserByUsername(newOccupiedBy);
+    var display = user ? getDisplayName(user) : newOccupiedBy;
+    notify('Check-in', display + ' checked in to Room ' + roomNumber, { user: newOccupiedBy });
+    try { showLastActionNote(display + ' checked in to Room ' + roomNumber); } catch (e) {}
+    // persist checkins
+    saveCheckins();
+  } else if (previousOccupiedBy && !newOccupiedBy) {
+    // check-out event
+    var user = getUserByUsername(previousOccupiedBy);
+    var display = user ? getDisplayName(user) : previousOccupiedBy;
+    notify('Check-out', display + ' checked out from Room ' + roomNumber, { user: previousOccupiedBy });
+    try { showLastActionNote(display + ' checked out from Room ' + roomNumber); } catch (e) {}
+  }
+  // visual cue: flash the impacted row(s)
+  try { flashRow(roomNumber, newOccupiedBy ? 'in' : 'out'); } catch (e) {}
+}
+
+function flashRow(roomNumber, type) {
+  var selector = 'tr[data-room="' + roomNumber + '"]';
+  var rows = Array.from(document.querySelectorAll(selector));
+  rows.forEach(function(r){
+    r.classList.remove('row-flash');
+    // force reflow to restart animation
+    void r.offsetWidth;
+    r.classList.add('row-flash');
+  });
+  // remove after timeout to keep DOM clean
+  setTimeout(function(){ rows.forEach(function(r){ r.classList.remove('row-flash'); }); }, 1200);
+}
+
+// show a small last-action note in the global toolbar area
+function showLastActionNote(message) {
+  try {
+    var toolbar = document.querySelector('.global-toolbar');
+    if (!toolbar) toolbar = document.body;
+    var el = document.getElementById('lastActionNote');
+    if (!el) {
+      el = document.createElement('div');
+      el.id = 'lastActionNote';
+      el.className = 'last-action-note';
+      // insert before toolbar children so it appears left of buttons
+      toolbar.appendChild(el);
+    }
+    el.textContent = message;
+    el.classList.add('visible');
+    setTimeout(function(){ el.classList.remove('visible'); }, 4500);
+  } catch (e) {}
+}
+
+// Remove lingering test check-ins and temporary test user (if any)
+function cleanupTestData() {
+  var changed = false;
+  try {
+    // clear room test markers
+    rooms.forEach(function(r){
+      if (r && r._testFake) {
+        r.occupiedBy = null;
+        delete r._testFake;
+        changed = true;
+        try { announceRoomChange(r.room); } catch (e) {}
+      }
+    });
+
+    // remove transient test user
+    var tu = '__test_prof__';
+    var ui = users.findIndex(function(u){ return u.username === tu; });
+    if (ui !== -1) { users.splice(ui,1); changed = true; }
+
+    // remove any persisted checkins for the test user
+    if (Array.isArray(checkins)) {
+      var before = checkins.length;
+      checkins = checkins.filter(function(c){ return c.user !== '__test_prof__'; });
+      if (checkins.length !== before) changed = true;
+      try { saveCheckins(); } catch (e) {}
+    }
+
+    if (changed) {
+      try { saveRooms(); } catch (e) {}
+      try { syncAllDashboards(); } catch (e) {}
+    }
+  } catch (e) {
+    // ignore errors — cleanup best-effort
+  }
+}
 
 const loginScreen = document.getElementById("loginScreen");
 const adminDashboard = document.getElementById("adminDashboard");
@@ -1207,11 +1750,20 @@ const adminRoomBody = document.getElementById("adminRoomBody");
 const adminAssignForm = document.getElementById("adminAssignForm");
 const adminProfessorSelect = document.getElementById("adminProfessorSelect");
 const adminRoomSelect = document.getElementById("adminRoomSelect");
+const adminFloorSelect = document.getElementById("adminFloorSelect");
+const adminStatusSelect = document.getElementById("adminStatusSelect");
 const adminAssignError = document.getElementById("adminAssignError");
-const usersBody = document.getElementById("usersBody");
 const profRoomBody = document.getElementById("profRoomBody");
+const profFloorSelect = document.getElementById("profFloorSelect");
+const usersBody = document.getElementById("usersBody");
 const studentRoomBody = document.getElementById("studentRoomBody");
 const studentNote = document.getElementById("studentNote");
+const studentFloorSelect = document.getElementById("studentFloorSelect");
+const studentSearch = document.getElementById("studentSearch");
+const studentHistoryBtn = document.getElementById("studentHistoryBtn");
+const studentHistoryModal = document.getElementById("studentHistoryModal");
+const studentHistoryClose = document.getElementById("studentHistoryClose");
+const lastUpdatedEl = document.getElementById("lastUpdated");
 
 const navItems = document.querySelectorAll("[data-admin-view]");
 const adminViews = {
@@ -1234,7 +1786,9 @@ const profLogoutBtn = document.getElementById("profLogoutBtn");
 const studentLogoutBtn = document.getElementById("studentLogoutBtn");
 
 function getUserByUsername(username) {
-  return users.find((user) => user.username.toLowerCase() === username.toLowerCase());
+  if (!username) return null;
+  var key = String(username).toLowerCase();
+  return users.find(function(user) { return user && user.username && user.username.toLowerCase() === key; });
 }
 
 function getLastName(fullName) {
@@ -1284,20 +1838,41 @@ function showDashboardForUser(user) {
     adminWelcome.textContent = "Welcome, " + getDisplayName(user) + "!";
     adminDashboard.classList.remove("hidden");
     switchAdminView("dashboard");
+    populateAdminFloorFilter();
+    populateAdminStatusFilter();
     renderAdminRooms();
     renderUsersTable();
+    // surface any pending notifications for this user
+    showPendingNotificationsForUser(user);
     return;
   }
 
   if (user.role === "Professor") {
     professorWelcome.textContent = "Welcome, " + getDisplayName(user) + "!";
     professorDashboard.classList.remove("hidden");
+    populateProfessorFloorFilter();
     renderProfessorRooms();
+    // show pending notifications for professor
+    showPendingNotificationsForUser(user);
     return;
   }
 
   studentDashboard.classList.remove("hidden");
+  // populate student header info
+  try {
+    var studentInfo = document.getElementById('studentInfo');
+    if (studentInfo) {
+      var program = user.program || user.degree || 'N/A';
+      var block = user.block || user.section || 'N/A';
+      var nameEl = studentInfo.querySelector('.student-name');
+      var metaEl = studentInfo.querySelector('.student-meta');
+      if (nameEl) nameEl.textContent = user.name || 'Student';
+      if (metaEl) metaEl.textContent = block + ' • ' + program;
+    }
+  } catch (e) {}
+
   renderStudentRooms();
+  showPendingNotificationsForUser(user);
 }
 
 function switchAdminView(view) {
@@ -1328,6 +1903,13 @@ function getOccupantName(username) {
   return user ? getDisplayName(user) : "Unknown";
 }
 
+function getRoomSince(room) {
+  if (!room) return '-';
+  var rec = (checkins || []).slice().reverse().find(function(c){ return c.room === room.room; });
+  if (!rec) return '-';
+  try { return new Date(rec.ts).toLocaleString(); } catch (e) { return '-'; }
+}
+
 function getRoomSectionLabel(roomNumber) {
   var floor = Math.floor(roomNumber / 100);
   var firstRoom = floor * 100 + 1;
@@ -1349,6 +1931,29 @@ function buildSectionRows(columnCount, rowRenderer) {
   });
 
   return rows.join("");
+}
+
+function buildSectionRowsFrom(roomArray, columnCount, rowRenderer) {
+  var currentFloor = 0;
+  var rows = [];
+  // sort by room number so sections render in order
+  var sorted = roomArray.slice().sort(function(a,b){ return a.room - b.room; });
+  sorted.forEach(function(room) {
+    var floor = Math.floor(room.room / 100);
+    if (floor !== currentFloor) {
+      currentFloor = floor;
+      rows.push('<tr class="section-row"><td colspan="' + columnCount + '">' + getRoomSectionLabel(room.room) + '</td></tr>');
+    }
+    rows.push(rowRenderer(room));
+  });
+  return rows.join("");
+}
+
+function populateProfessorFloorFilter() {
+  if (!profFloorSelect) return;
+  var floors = Array.from(new Set(rooms.map(function(r){ return Math.floor(r.room/100); }))).sort(function(a,b){ return a-b; });
+  profFloorSelect.innerHTML = '<option value="">All</option>' + floors.map(function(f){ return '<option value="' + f + '">Floor ' + f + '</option>'; }).join('');
+  profFloorSelect.addEventListener('change', function(){ renderProfessorRooms(); });
 }
 
 function renderUsersTable() {
@@ -1396,10 +2001,35 @@ function renderAdminAssignmentOptions() {
   submitButton.disabled = !professors.length || !availableRooms.length;
 }
 
+function populateAdminFloorFilter() {
+  if (!adminFloorSelect) return;
+  var floors = Array.from(new Set(rooms.map(function(r){ return Math.floor(r.room/100); }))).sort(function(a,b){ return a-b; });
+  // clear existing options but keep 'All'
+  adminFloorSelect.innerHTML = '<option value="">All</option>' + floors.map(function(f){ return '<option value="' + f + '">Floor ' + f + '</option>'; }).join('');
+  adminFloorSelect.addEventListener('change', function(){ renderAdminRooms(); });
+}
+
+function populateAdminStatusFilter() {
+  if (!adminStatusSelect) return;
+  adminStatusSelect.innerHTML = [
+    { v: '', t: 'All' },
+    { v: 'available', t: 'Available' },
+    { v: 'occupied', t: 'Occupied' },
+    { v: 'reserved', t: 'Reserved / Scheduled' },
+    { v: 'maintenance', t: 'Maintenance / Out of Service' }
+  ].map(function(o){ return '<option value="' + o.v + '">' + o.t + '</option>'; }).join('');
+  adminStatusSelect.addEventListener('change', function(){ renderAdminRooms(); });
+}
+
 function releaseRoomsForUser(username) {
+  var changed = [];
   rooms.forEach(function(room) {
-    if (room.occupiedBy === username) room.occupiedBy = null;
+    if (room.occupiedBy === username) { room.occupiedBy = null; changed.push(room.room); }
   });
+  // persist changes
+  saveRooms();
+  // announce each changed room so other tabs can highlight
+  changed.forEach(function(r){ announceRoomChange(r); });
 }
 
 function syncAllDashboards() {
@@ -1414,23 +2044,50 @@ function syncAllDashboards() {
 }
 
 function renderAdminRooms() {
-  adminRoomBody.innerHTML = buildSectionRows(4, function(room) {
+  var selectedFloor = (adminFloorSelect && adminFloorSelect.value) ? Number(adminFloorSelect.value) : null;
+  var selectedStatus = (adminStatusSelect && adminStatusSelect.value) ? adminStatusSelect.value : '';
+  var roomsToRender = selectedFloor ? rooms.filter(function(r){ return Math.floor(r.room/100) === selectedFloor; }) : rooms.slice();
+
+  // apply status filter
+  if (selectedStatus) {
+    var now = Date.now();
+    if (selectedStatus === 'available') {
+      roomsToRender = roomsToRender.filter(function(r){ return !r.occupiedBy; });
+    } else if (selectedStatus === 'occupied') {
+      roomsToRender = roomsToRender.filter(function(r){ return !!r.occupiedBy; });
+    } else if (selectedStatus === 'reserved') {
+      roomsToRender = roomsToRender.filter(function(r){
+        return scheduledCheckins.some(function(s){
+          try { var t = (typeof s.whenTs === 'number') ? s.whenTs : new Date(s.whenTs).getTime(); return s.room === r.room && t > now; } catch (e) { return false; }
+        });
+      });
+    } else if (selectedStatus === 'maintenance') {
+      roomsToRender = roomsToRender.filter(function(r){ return r.status === 'maintenance'; });
+    }
+  }
+
+  adminRoomBody.innerHTML = buildSectionRowsFrom(roomsToRender, 4, function(room) {
     var isOccupied = Boolean(room.occupiedBy);
     var actionBtn = isOccupied
       ? '<button class="danger-btn" data-admin-action="release" data-room="' + room.room + '">Force Release</button>'
       : '<span class="action-note">Assign from dropdown</span>';
-    return '<tr class="' + (isOccupied ? "occupied-row" : "") + '">' +
+      return '<tr data-room="' + room.room + '" class="' + (isOccupied ? "occupied-row" : "") + '">' +
       '<td>' + room.room + '</td>' +
-      '<td class="' + (isOccupied ? "occupied" : "available") + '">' + getRoomStatus(room) + '</td>' +
+      '<td>' + ('<span class="status-pill ' + (isOccupied ? 'status-occupied' : 'status-available') + '" aria-label="' + getRoomStatus(room) + '">' + (isOccupied ? '👤 ' : '✔️ ') + getRoomStatus(room) + '</span>') + '</td>' +
       '<td>' + getOccupantName(room.occupiedBy) + '</td>' +
+      '<td>' + (isOccupied ? getRoomSince(room) : '-') + '</td>' +
       '<td>' + actionBtn + '</td>' +
       '</tr>';
   });
   renderAdminAssignmentOptions();
+  renderAdminStats();
 }
 
 function renderProfessorRooms() {
-  profRoomBody.innerHTML = buildSectionRows(3, function(room) {
+  var selectedFloor = (profFloorSelect && profFloorSelect.value) ? Number(profFloorSelect.value) : null;
+  var roomsToRender = selectedFloor ? rooms.filter(function(r){ return Math.floor(r.room/100) === selectedFloor; }) : rooms;
+
+  profRoomBody.innerHTML = buildSectionRowsFrom(roomsToRender, 4, function(room) {
     var occupiedByCurrentUser = room.occupiedBy === currentUser.username;
     var occupiedByOther = room.occupiedBy && !occupiedByCurrentUser;
     var badge = occupiedByCurrentUser ? '<span class="badge">Occupied (You)</span>' : "";
@@ -1444,32 +2101,116 @@ function renderProfessorRooms() {
     }
     var actionCell;
     if (occupiedByCurrentUser) {
-      actionCell = '<button class="action-btn" data-prof-action="checkout" data-room="' + room.room + '">Checked In</button>';
+      actionCell = '<button class="danger-btn" data-prof-action="checkout" data-room="' + room.room + '" aria-label="Check out from room ' + room.room + '">Check Out</button>';
     } else if (occupiedByOther) {
       actionCell = "";
     } else {
-      actionCell = '<button class="action-btn" data-prof-action="checkin" data-room="' + room.room + '">Check In</button>';
+      actionCell = '<button class="action-btn" data-prof-action="checkin" data-room="' + room.room + '" aria-label="Check in to room ' + room.room + '">Check In</button>';
     }
-    return '<tr class="' + (occupiedByCurrentUser ? "occupied-row" : "") + '">' +
+    return '<tr data-room="' + room.room + '" class="' + (occupiedByCurrentUser ? "occupied-row" : "") + '">' +
       '<td><strong>Room ' + room.room + '</strong>' + badge + '</td>' +
-      '<td class="' + (room.occupiedBy ? "occupied" : "available") + '">' + statusText + '</td>' +
+      '<td>' + ('<span class="status-pill ' + (room.occupiedBy ? 'status-occupied' : 'status-available') + '" aria-label="' + statusText + '">' + (room.occupiedBy ? '👤 ' : '✔️ ') + statusText + '</span>') + '</td>' +
+      '<td>' + (room.occupiedBy ? getRoomSince(room) : '-') + '</td>' +
       '<td>' + actionCell + '</td>' +
       '</tr>';
   });
+  // update professor-specific stats
+  renderProfessorStats();
+}
+
+function renderAdminStats() {
+  var available = getAvailableRooms().length;
+  var occupied = rooms.length - available;
+  var availEl = document.getElementById('roomsAvailableCount');
+  var occEl = document.getElementById('roomsOccupiedCount');
+  if (availEl) availEl.textContent = String(available);
+  if (occEl) occEl.textContent = String(occupied);
+  // total and utilization
+  var total = rooms.length;
+  var util = total ? (occupied / total * 100) : 0;
+  var utilEl = document.getElementById('utilizationPercent');
+  if (utilEl) utilEl.textContent = util.toFixed(1) + "%";
+  // today's check-ins (count checkins with today's date)
+  var todayKey = new Date().toISOString().slice(0,10);
+  var todays = checkins.filter(function(c) { return c.date === todayKey; }).length;
+  var todayEl = document.getElementById('todaysCheckinsCount');
+  if (todayEl) todayEl.textContent = String(todays);
+}
+
+function renderProfessorStats() {
+  if (!currentUser) return;
+  var myRooms = rooms.filter(function(r) { return r.occupiedBy === currentUser.username; });
+  var assignedEl = document.getElementById('profAssignedRoom');
+  var utilEl = document.getElementById('profUtilizationPercent');
+  // Assigned / Checked In: show the room number if occupied, otherwise '-'
+  if (assignedEl) {
+    if (myRooms.length > 0) {
+      assignedEl.textContent = 'Room ' + myRooms[0].room;
+    } else {
+      assignedEl.textContent = '-';
+    }
+  }
+  // Utilization: (myAssigned / total) * 100
+  var total = rooms.length;
+  var myAssigned = myRooms.length;
+  var util = total ? (myAssigned / total * 100) : 0;
+  if (utilEl) utilEl.textContent = util.toFixed(1) + '%';
+}
+
+function getFilteredStudentRooms() {
+  var floorVal = (studentFloorSelect && studentFloorSelect.value) ? Number(studentFloorSelect.value) : null;
+  var q = (studentSearch && studentSearch.value) ? studentSearch.value.trim().toLowerCase() : '';
+  var filtered = rooms.slice();
+  if (floorVal) filtered = filtered.filter(function(r){ return Math.floor(r.room/100) === floorVal; });
+  if (q) {
+    filtered = filtered.filter(function(r){
+      var roomMatches = String(r.room).indexOf(q) !== -1;
+      var profMatches = r.occupiedBy && getOccupantName(r.occupiedBy).toLowerCase().indexOf(q) !== -1;
+      return roomMatches || profMatches;
+    });
+  }
+  return filtered;
+}
+
+function populateStudentFloorFilter() {
+  if (!studentFloorSelect) return;
+  var floors = Array.from(new Set(rooms.map(function(r){ return Math.floor(r.room/100); }))).sort(function(a,b){ return a-b; });
+  studentFloorSelect.innerHTML = '<option value="">All</option>' + floors.map(function(f){ return '<option value="' + f + '">Floor ' + f + '</option>'; }).join('');
+  studentFloorSelect.addEventListener('change', renderStudentRooms);
+}
+
+function renderStudentHistory() {
+  if (!studentHistoryModal) return;
+  var body = studentHistoryModal.querySelector('.modal-body');
+  var items = (checkins || []).slice().sort(function(a,b){ return b.ts - a.ts; }).slice(0,20);
+  body.innerHTML = items.length ? items.map(function(c){
+    var name = getOccupantName(c.user) || c.user;
+    var time = new Date(c.ts).toLocaleString();
+    return '<div style="padding:8px 0;border-bottom:1px solid #e6e9ef;">Room ' + c.room + ' — ' + name + ' <span style="color:#6a7180;margin-left:8px;font-weight:600;">' + time + '</span></div>';
+  }).join('') : '<div style="padding:8px;">No recent activity.</div>';
+  studentHistoryModal.classList.remove('hidden');
+  studentHistoryModal.setAttribute('aria-hidden','false');
 }
 
 function renderStudentRooms() {
-  studentRoomBody.innerHTML = buildSectionRows(3, function(room) {
-    return '<tr class="' + (room.occupiedBy ? "occupied-row" : "") + '">' +
+  var rows = buildSectionRowsFrom(getFilteredStudentRooms(), 5, function(room) {
+    var isOccupied = Boolean(room.occupiedBy);
+    var icon = isOccupied ? '👤' : '✔️';
+    var profText = room.occupiedBy ? getOccupantName(room.occupiedBy) : '-';
+    return '<tr data-room="' + room.room + '" class="' + (isOccupied ? "occupied-row" : "") + '">' +
+      '<td style="width:48px;text-align:center;">' + icon + '</td>' +
       '<td><strong>Room ' + room.room + '</strong></td>' +
-      '<td class="' + (room.occupiedBy ? "occupied" : "available") + '">' + getRoomStatus(room) + '</td>' +
-      '<td>' + (room.occupiedBy ? getOccupantName(room.occupiedBy) : '-') + '</td>' +
+      '<td>' + ('<span class="status-pill ' + (isOccupied ? 'status-occupied' : 'status-available') + '" aria-label="' + getRoomStatus(room) + '">' + (isOccupied ? '👤 ' : '✔️ ') + getRoomStatus(room) + '</span>') + '</td>' +
+      '<td>' + (isOccupied ? getRoomSince(room) : '-') + '</td>' +
+      '<td>' + profText + '</td>' +
       '</tr>';
   });
+  studentRoomBody.innerHTML = rows;
   var occupiedRooms = rooms.filter(function(room) { return room.occupiedBy; });
   studentNote.textContent = occupiedRooms.length
-    ? "\uD83D\uDDD3 Occupied rooms show the assigned professor in the table above."
-    : "\uD83D\uDDD3 All rooms are currently available.";
+    ? '\uD83D\uDCCD ' + occupiedRooms.length + ' occupied rooms — assigned professor shown above.'
+    : '\uD83D\uDCCD All rooms are currently available.';
+  if (lastUpdatedEl) lastUpdatedEl.textContent = 'Last updated: ' + new Date().toLocaleTimeString();
 }
 
 function rerenderVisibleDashboard() {
@@ -1555,8 +2296,14 @@ adminAssignForm.addEventListener("submit", function(event) {
   }
 
   releaseRoomsForUser(selectedProfessor.username);
+  var prev = selectedRoom.occupiedBy;
   selectedRoom.occupiedBy = selectedProfessor.username;
+  recordOccupancyChange(selectedRoom.room, prev, selectedRoom.occupiedBy);
   adminAssignForm.reset();
+  // persist rooms state after assignment
+  saveRooms();
+  saveCheckins();
+  announceRoomChange(selectedRoom.room);
   syncAllDashboards();
 });
 
@@ -1609,7 +2356,20 @@ adminRoomBody.addEventListener("click", function(event) {
   var action = target.dataset.adminAction;
   var room = rooms.find(function(item) { return item.room === roomNumber; });
   if (!room) return;
-  if (action === "release") room.occupiedBy = null;
+  if (action === "release") {
+    var prev = room.occupiedBy;
+    room.occupiedBy = null;
+    // persist rooms after forced release
+    saveRooms();
+    // notify about forced release and persist for the previous occupant (if known)
+    var occupant = prev ? getUserByUsername(prev) : null;
+    var name = occupant ? getDisplayName(occupant) : (prev || 'Unknown');
+    if (prev) notify('Forced release', 'Room ' + roomNumber + ' was released (was: ' + name + ')', { user: prev });
+    else notify('Forced release', 'Room ' + roomNumber + ' was released (was: ' + name + ')');
+    // also persist checkins (no-op here but keep consistent)
+    saveCheckins();
+    announceRoomChange(roomNumber);
+  }
   syncAllDashboards();
 });
 
@@ -1621,11 +2381,24 @@ profRoomBody.addEventListener("click", function(event) {
   var selectedRoom = rooms.find(function(item) { return item.room === roomNumber; });
   if (!selectedRoom) return;
   if (action === "checkout" && selectedRoom.occupiedBy === currentUser.username) {
+    if (!confirm('Check out from Room ' + roomNumber + '?')) return;
     selectedRoom.occupiedBy = null;
+    saveRooms();
+    announceRoomChange(roomNumber);
   }
   if (action === "checkin" && !selectedRoom.occupiedBy) {
-    rooms.forEach(function(room) { if (room.occupiedBy === currentUser.username) room.occupiedBy = null; });
-    selectedRoom.occupiedBy = currentUser.username;
+    // Prevent checking in to a new room while already checked in elsewhere
+    var currentlyChecked = rooms.find(function(r){ return r.occupiedBy === currentUser.username; });
+    if (currentlyChecked && currentlyChecked.room !== roomNumber) {
+      notify('Action required', 'Please check out of Room ' + currentlyChecked.room + ' before checking into Room ' + roomNumber);
+    } else {
+      var prev = selectedRoom.occupiedBy;
+      selectedRoom.occupiedBy = currentUser.username;
+      recordOccupancyChange(selectedRoom.room, prev, selectedRoom.occupiedBy);
+      saveRooms();
+      saveCheckins();
+      announceRoomChange(roomNumber);
+    }
   }
   renderProfessorRooms();
   if (!adminDashboard.classList.contains("hidden")) renderAdminRooms();
@@ -1644,9 +2417,101 @@ usersBody.addEventListener("click", function(event) {
   syncAllDashboards();
 });
 
-adminLogoutBtn.addEventListener("click", showLogin);
-profLogoutBtn.addEventListener("click", showLogin);
-studentLogoutBtn.addEventListener("click", showLogin);
+adminLogoutBtn.addEventListener("click", function(){ if (confirm('Confirm log out?')) showLogin(); });
+profLogoutBtn.addEventListener("click", function(){ if (confirm('Confirm log out?')) showLogin(); });
+studentLogoutBtn.addEventListener("click", function(){ if (confirm('Confirm log out?')) showLogin(); });
+
+// Student view helpers: wire filters, search and history (read-only)
+if (studentSearch) studentSearch.addEventListener('input', function(){ renderStudentRooms(); });
+if (studentHistoryBtn) studentHistoryBtn.addEventListener('click', function(){ renderStudentHistory(); });
+if (studentHistoryClose) studentHistoryClose.addEventListener('click', function(){ if (studentHistoryModal) { studentHistoryModal.classList.add('hidden'); studentHistoryModal.setAttribute('aria-hidden','true'); } });
+populateStudentFloorFilter();
+// Import / Export demo data (localStorage)
+const importFile = document.getElementById('importFile');
+const exportDataBtn = document.getElementById('exportDataBtn');
+const importDataBtn = document.getElementById('importDataBtn');
+const loadSampleBtn = document.getElementById('loadSampleBtn');
+
+function exportData() {
+  var payload = { users: users, rooms: rooms, checkins: checkins };
+  var blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
+  var url = URL.createObjectURL(blob);
+  var a = document.createElement('a');
+  a.href = url; a.download = 'adbms-demo.json'; document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url);
+}
+
+function importDataFile(file) {
+  if (!file) return;
+  var reader = new FileReader();
+  reader.onload = function(e) {
+    try {
+      var parsed = JSON.parse(e.target.result);
+      if (parsed.rooms) {
+        try { localStorage.setItem(ROOMS_KEY, JSON.stringify(parsed.rooms)); } catch(e) {}
+      }
+      if (parsed.checkins) {
+        try { localStorage.setItem(CHECKINS_KEY, JSON.stringify(parsed.checkins)); } catch(e) {}
+      }
+      if (parsed.users) {
+        // update in-memory users for demo only
+        try { parsed.users.forEach(function(u){ if (!getUserByUsername(u.username)) users.push(u); }); } catch(e) {}
+      }
+      loadRooms(); loadCheckins(); rerenderVisibleDashboard(); notify('Import', 'Demo data imported');
+    } catch (err) { notify('Import error', 'Invalid file'); }
+  };
+  reader.readAsText(file);
+}
+
+if (exportDataBtn) exportDataBtn.addEventListener('click', exportData);
+if (importDataBtn) importDataBtn.addEventListener('click', function(){ if (importFile) importFile.click(); });
+if (importFile) importFile.addEventListener('change', function(e){ importDataFile(e.target.files[0]); importFile.value = ''; });
+if (loadSampleBtn) loadSampleBtn.addEventListener('click', function(){ saveRooms(); saveCheckins(); loadRooms(); loadCheckins(); rerenderVisibleDashboard(); notify('Sample', 'Sample data loaded'); });
+
+// listen for storage changes from other tabs and sync state
+window.addEventListener('storage', function(e) {
+  if (!e.key) return;
+  if (e.key === ROOMS_KEY) {
+    loadRooms();
+    rerenderVisibleDashboard();
+  }
+  if (e.key === CHECKINS_KEY) {
+    loadCheckins();
+    renderAdminStats();
+  }
+  if (e.key === NOTIFY_KEY) {
+    loadNotifications();
+    // surface new notifications for current user if any
+    if (currentUser) showPendingNotificationsForUser(currentUser);
+  }
+  // also handle last-change marker to highlight row
+  if (e.key === LAST_CHANGE_KEY) {
+    try {
+      var payload = e.newValue ? JSON.parse(e.newValue) : null;
+      if (payload && payload.room) highlightRoomRow(payload.room);
+    } catch (err) {}
+  }
+});
+
+function highlightRoomRow(roomNumber) {
+  var textA = 'Room ' + roomNumber;
+  var found = [];
+  // search admin table (first cell contains number)
+  [adminRoomBody, profRoomBody, studentRoomBody].forEach(function(body) {
+    if (!body) return;
+    var tds = body.querySelectorAll('td');
+    tds.forEach(function(td) {
+      var t = td.textContent.trim();
+      if (t === String(roomNumber) || t.indexOf(textA) !== -1) {
+        var row = td.closest('tr');
+        if (row && !found.includes(row)) {
+          found.push(row);
+          row.classList.add('flash-highlight');
+          setTimeout(function(){ row.classList.remove('flash-highlight'); }, 1400);
+        }
+      }
+    });
+  });
+}
 
 showLogin();
     </script>

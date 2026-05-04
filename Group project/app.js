@@ -25,6 +25,7 @@ const loginError = document.getElementById("loginError");
 
 const adminWelcome = document.getElementById("adminWelcome");
 const professorWelcome = document.getElementById("professorWelcome");
+const studentInfoEl = document.getElementById("studentInfo");
 
 const adminRoomBody = document.getElementById("adminRoomBody");
 const usersBody = document.getElementById("usersBody");
@@ -99,6 +100,16 @@ function showDashboardForUser(user) {
   }
 
   studentDashboard.classList.remove("hidden");
+  // populate student header info
+  try {
+    if (studentInfoEl) {
+      var program = user.program || user.degree || 'N/A';
+      var block = user.block || user.section || 'N/A';
+      studentInfoEl.querySelector('.student-name')?.textContent = user.name || 'Student';
+      studentInfoEl.querySelector('.student-meta')?.textContent = block + ' • ' + program;
+    }
+  } catch (e) {}
+
   renderStudentRooms();
 }
 
@@ -182,7 +193,7 @@ function renderAdminRooms() {
     .map((room) => {
       const isOccupied = Boolean(room.occupiedBy);
       return `
-      <tr class="${isOccupied ? "occupied-row" : ""}">
+      <tr data-room="${room.room}" class="${isOccupied ? "occupied-row" : ""}">
         <td>${room.room}</td>
         <td class="${isOccupied ? "occupied" : "available"}">${getRoomStatus(room)}</td>
         <td>${getOccupantName(room.occupiedBy)}</td>
@@ -205,7 +216,7 @@ function renderProfessorRooms() {
       const occupiedByOther = room.occupiedBy && !occupiedByCurrentUser;
 
       return `
-      <tr class="${occupiedByCurrentUser ? "occupied-row" : ""}">
+      <tr data-room="${room.room}" class="${occupiedByCurrentUser ? "occupied-row" : ""}">
         <td>
           <strong>Room ${room.room}</strong>
           ${occupiedByCurrentUser ? '<span class="badge">Occupied (You)</span>' : ""}
@@ -237,7 +248,7 @@ function renderStudentRooms() {
   studentRoomBody.innerHTML = rooms
     .map(
       (room) => `
-      <tr class="${room.occupiedBy ? "occupied-row" : ""}">
+      <tr data-room="${room.room}" class="${room.occupiedBy ? "occupied-row" : ""}">
         <td><strong>Room ${room.room}</strong></td>
         <td class="${room.occupiedBy ? "occupied" : "available"}">${getRoomStatus(room)}</td>
       </tr>`
@@ -248,6 +259,40 @@ function renderStudentRooms() {
   studentNote.textContent = occupiedRoom
     ? `🗓 Room ${occupiedRoom.room} is currently occupied by a professor.`
     : "🗓 All rooms are currently available.";
+}
+
+// Flash a table row to call attention to a recent change
+function flashRoomRow(roomNumber) {
+  try {
+    const selectors = [adminRoomBody, profRoomBody, studentRoomBody];
+    selectors.forEach((body) => {
+      if (!body) return;
+      const row = body.querySelector(`tr[data-room="${roomNumber}"]`);
+      if (row) {
+        row.classList.add("row-flash");
+        // remove the class after the animation completes to allow retrigger
+        setTimeout(() => row.classList.remove("row-flash"), 1100);
+      }
+    });
+  } catch (e) {
+    // silent fail - UI enhancement only
+  }
+}
+
+// transient on-page note for check-in/check-out actions
+function showActionNote(message) {
+  try {
+    let el = document.getElementById('actionNote');
+    if (!el) {
+      el = document.createElement('div');
+      el.id = 'actionNote';
+      el.className = 'action-note-toast';
+      document.body.appendChild(el);
+    }
+    el.textContent = message;
+    el.classList.add('visible');
+    setTimeout(() => { el.classList.remove('visible'); }, 4500);
+  } catch (e) {}
 }
 
 function rerenderVisibleDashboard() {
@@ -395,6 +440,7 @@ adminRoomBody.addEventListener("click", (event) => {
 
   if (action === "release") {
     room.occupiedBy = null;
+    showActionNote(`Room ${roomNumber} released (check-out)`);
   }
 
   if (action === "checkin") {
@@ -404,9 +450,11 @@ adminRoomBody.addEventListener("click", (event) => {
       return;
     }
     room.occupiedBy = professors[0].username;
+    showActionNote(`Room ${roomNumber} checked in to ${getOccupantName(room.occupiedBy)}`);
   }
 
   syncAllDashboards();
+  flashRoomRow(roomNumber);
 });
 
 profRoomBody.addEventListener("click", (event) => {
@@ -443,6 +491,7 @@ profRoomBody.addEventListener("click", (event) => {
   if (!studentDashboard.classList.contains("hidden")) {
     renderStudentRooms();
   }
+  flashRoomRow(roomNumber);
 });
 
 usersBody.addEventListener("click", (event) => {
@@ -472,7 +521,8 @@ usersBody.addEventListener("click", (event) => {
 });
 
 adminLogoutBtn.addEventListener("click", showLogin);
-profLogoutBtn.addEventListener("click", showLogin);
-studentLogoutBtn.addEventListener("click", showLogin);
+adminLogoutBtn.addEventListener("click", function(){ if (confirm('Confirm log out?')) showLogin(); });
+profLogoutBtn.addEventListener("click", function(){ if (confirm('Confirm log out?')) showLogin(); });
+studentLogoutBtn.addEventListener("click", function(){ if (confirm('Confirm log out?')) showLogin(); });
 
 showLogin();
