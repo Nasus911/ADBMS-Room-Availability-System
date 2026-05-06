@@ -1,0 +1,17 @@
+[
+  {
+    "title": "Sleep",
+    "completed": true,
+    "category": ""
+  },
+  {
+    "title": "Eat",
+    "completed": true,
+    "category": ""
+  },
+  {
+    "title": "Jogging",
+    "completed": false,
+    "category": "Exercise"
+  }
+]
