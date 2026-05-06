@@ -713,6 +713,12 @@ td {
   min-width: 96px;
 }
 
+.action-group {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
 .action-note {
   color: #5c6475;
   font-size: 13px;
@@ -1163,13 +1169,6 @@ select {
     <!-- Toast container for in-page notifications -->
     <div id="toastContainer" class="toast-container" aria-live="polite"></div>
     <main class="page">
-      <div class="global-toolbar" role="region" aria-label="Demo data toolbar" style="margin-bottom:12px;">
-        <div style="flex:1"></div>
-        <input id="importFile" type="file" accept="application/json" style="display:none;" />
-        <button id="exportDataBtn" class="ghost" aria-label="Export demo data" title="Export demo data">Export</button>
-        <button id="importDataBtn" class="ghost" aria-label="Import demo data" title="Import demo data">Import</button>
-        <button id="loadSampleBtn" class="ghost" aria-label="Load sample data" title="Load sample data">Load Sample</button>
-      </div>
       <section id="loginScreen" class="login-screen card">
         <div class="login-hero">
           <div class="login-copy">
@@ -1331,7 +1330,7 @@ select {
               <button id="closeModalBtn" class="ghost" type="button">&#10005;</button>
             </div>
             <form id="userForm" class="modal-body">
-              <input type="text" id="fullName" placeholder="Full Name" required />
+              <input type="text" id="fullName" placeholder="Full Name" required pattern="[A-Za-z \u00C0-\u017F]+" title="Only letters and spaces allowed" />
               <input type="text" id="username" placeholder="Username" required />
               <div class="password-field">
                 <input type="password" id="password" placeholder="Password" required />
@@ -1351,6 +1350,35 @@ select {
               <div class="form-actions">
                 <button type="submit" class="primary">Add User</button>
                 <button type="button" id="cancelModalBtn" class="secondary">Cancel</button>
+              </div>
+            </form>
+          </div>
+        </div>
+        <div id="editUserModal" class="modal hidden" aria-hidden="true">
+          <div class="modal-card">
+            <div class="modal-head">
+              <h3>Edit User</h3>
+              <button id="editCloseBtn" class="ghost" type="button">&#10005;</button>
+            </div>
+            <form id="editUserForm" class="modal-body">
+              <input type="text" id="editFullName" placeholder="Full Name" required pattern="[A-Za-z \u00C0-\u017F]+" title="Only letters and spaces allowed" />
+              <input type="text" id="editUsername" placeholder="Username" required />
+              <input type="hidden" id="editOriginalUsername" />
+              <label for="editRoleSelect">Role:</label>
+              <select id="editRoleSelect" required>
+                <option value="Professor">Professor</option>
+                <option value="Student">Student</option>
+                <option value="Admin">Admin</option>
+              </select>
+              <label for="editStatusSelect">Status:</label>
+              <select id="editStatusSelect" required>
+                <option value="Active">Active</option>
+                <option value="Inactive">Inactive</option>
+              </select>
+              <p id="editUserError" class="form-error hidden"></p>
+              <div class="form-actions">
+                <button type="submit" class="primary">Save Changes</button>
+                <button type="button" id="editCancelBtn" class="secondary">Cancel</button>
               </div>
             </form>
           </div>
@@ -1473,11 +1501,13 @@ select {
     </main>
 
     <script>
-const users = [
+const defaultUsers = [
   { name: "System Admin", username: "admin", password: "admin123", role: "Admin", status: "Active", lastLogin: "Mar 14" },
   { name: "Recto Santos", username: "psantos", password: "prof123", role: "Professor", status: "Active", lastLogin: "Mar 14" },
   { name: "Juan Dela Cruz", username: "jdc", password: "student123", role: "Student", status: "Active", lastLogin: "Mar 13" },
 ];
+
+let users = defaultUsers.slice();
 
 const rooms = (function() {
   var roomList = [];
@@ -1498,6 +1528,7 @@ const rooms = (function() {
 // Persistent rooms/checkins keys
 const ROOMS_KEY = 'adbms_rooms_v1';
 const CHECKINS_KEY = 'adbms_checkins_v1';
+const USERS_KEY = 'adbms_users_v1';
 const LAST_CHANGE_KEY = 'adbms_last_change_v1';
 
 // in-memory checkins log
@@ -1531,6 +1562,25 @@ function loadRooms() {
   } catch (e) {}
 }
 
+function saveUsers() {
+  try { localStorage.setItem(USERS_KEY, JSON.stringify(users)); } catch (e) {}
+}
+
+function loadUsers() {
+  try {
+    var raw = localStorage.getItem(USERS_KEY);
+    if (raw) {
+      var parsed = JSON.parse(raw);
+      if (Array.isArray(parsed) && parsed.length) {
+        users = parsed.slice();
+        return;
+      }
+    }
+  } catch (e) {}
+  users = defaultUsers.slice();
+  saveUsers();
+}
+
 function saveCheckins() {
   try { localStorage.setItem(CHECKINS_KEY, JSON.stringify(checkins)); } catch (e) {}
 }
@@ -1545,6 +1595,7 @@ function loadCheckins() {
 // load persisted state if present
 loadRooms();
 loadCheckins();
+loadUsers();
 
 let currentUser = null;
 
@@ -1781,6 +1832,17 @@ const userForm = document.getElementById("userForm");
 const userFormError = document.getElementById("userFormError");
 const passwordToggles = document.querySelectorAll("[data-toggle-password]");
 
+const editUserModal = document.getElementById("editUserModal");
+const editUserForm = document.getElementById("editUserForm");
+const editUserError = document.getElementById("editUserError");
+const editCloseBtn = document.getElementById("editCloseBtn");
+const editCancelBtn = document.getElementById("editCancelBtn");
+const editFullName = document.getElementById("editFullName");
+const editUsername = document.getElementById("editUsername");
+const editOriginalUsername = document.getElementById("editOriginalUsername");
+const editRoleSelect = document.getElementById("editRoleSelect");
+const editStatusSelect = document.getElementById("editStatusSelect");
+
 const adminLogoutBtn = document.getElementById("adminLogoutBtn");
 const profLogoutBtn = document.getElementById("profLogoutBtn");
 const studentLogoutBtn = document.getElementById("studentLogoutBtn");
@@ -1828,6 +1890,7 @@ function showLogin() {
   });
   loginError.classList.add("hidden");
   closeUserModal();
+  closeEditUserModal();
 }
 
 function showDashboardForUser(user) {
@@ -1964,9 +2027,17 @@ function renderUsersTable() {
     if (user.username === "admin") {
       actionCell = '<span class="action-note">Primary admin</span>';
     } else if (user.status === "Active") {
-      actionCell = '<button class="danger-btn user-toggle-btn" data-user-action="deactivate" data-username="' + user.username + '">Deactivate</button>';
+      actionCell = '<div class="action-group">' +
+        '<button class="action-btn" data-user-action="edit" data-username="' + user.username + '">Edit</button>' +
+        '<button class="secondary" data-user-action="delete" data-username="' + user.username + '">Delete</button>' +
+        '<button class="danger-btn user-toggle-btn" data-user-action="deactivate" data-username="' + user.username + '">Deactivate</button>' +
+        '</div>';
     } else {
-      actionCell = '<button class="action-btn user-toggle-btn" data-user-action="reactivate" data-username="' + user.username + '">Reactivate</button>';
+      actionCell = '<div class="action-group">' +
+        '<button class="action-btn" data-user-action="edit" data-username="' + user.username + '">Edit</button>' +
+        '<button class="secondary" data-user-action="delete" data-username="' + user.username + '">Delete</button>' +
+        '<button class="action-btn user-toggle-btn" data-user-action="reactivate" data-username="' + user.username + '">Reactivate</button>' +
+        '</div>';
     }
     return '<tr class="' + rowClass + '">' +
       '<td>' + getDisplayName(user) + '</td>' +
@@ -2226,6 +2297,48 @@ function closeUserModal() {
   userFormError.classList.add("hidden");
 }
 
+function closeEditUserModal() {
+  editUserModal.classList.add("hidden");
+  editUserError.textContent = "";
+  editUserError.classList.add("hidden");
+  editUserForm.reset();
+  editUserModal.setAttribute("aria-hidden", "true");
+}
+
+function openEditUserModal(user) {
+  if (!user || user.username === "admin") return;
+  editFullName.value = user.name || "";
+  editUsername.value = user.username || "";
+  editOriginalUsername.value = user.username || "";
+  editRoleSelect.value = user.role || "Student";
+  editStatusSelect.value = user.status || "Active";
+  editUserError.textContent = "";
+  editUserError.classList.add("hidden");
+  editUserModal.classList.remove("hidden");
+  editUserModal.setAttribute("aria-hidden", "false");
+}
+
+function normalizeUsername(value) {
+  return String(value || "").trim().toLowerCase();
+}
+
+function updateUserReferences(oldUsername, newUsername) {
+  if (!oldUsername || !newUsername || oldUsername === newUsername) return;
+  rooms.forEach(function(room) {
+    if (room.occupiedBy === oldUsername) room.occupiedBy = newUsername;
+  });
+  if (Array.isArray(checkins)) {
+    checkins.forEach(function(entry) {
+      if (entry && entry.user === oldUsername) entry.user = newUsername;
+    });
+  }
+  if (Array.isArray(notifications)) {
+    notifications.forEach(function(note) {
+      if (note && note.user === oldUsername) note.user = newUsername;
+    });
+  }
+}
+
 function openUserModal() {
   addUserModal.classList.remove("hidden");
   userFormError.textContent = "";
@@ -2234,14 +2347,19 @@ function openUserModal() {
 
 loginForm.addEventListener("submit", function(event) {
   event.preventDefault();
+  // ensure we have the latest persisted users (handles other tabs/imports)
+  try { loadUsers(); } catch (e) { /* ignore */ }
   var username = loginUsername.value.trim();
   var password = loginPassword.value;
+  // diagnostic log for debugging login issues
+  try { console.debug('Attempting login for', username, 'known users:', users.map(function(u){ return u.username; })); } catch (e) {}
   var user = users.find(function(c) {
     return c.username.toLowerCase() === username.toLowerCase() && c.password === password;
   });
   if (!user) {
     loginError.textContent = "Invalid username or password.";
     loginError.classList.remove("hidden");
+    try { console.debug('Login failed for', username); } catch (e) {}
     return;
   }
   if (user.status !== "Active") {
@@ -2253,6 +2371,7 @@ loginForm.addEventListener("submit", function(event) {
   loginError.textContent = "Invalid username or password.";
   currentUser = user;
   currentUser.lastLogin = formatToday();
+  saveUsers();
   showDashboardForUser(user);
 });
 
@@ -2265,6 +2384,8 @@ navItems.forEach(function(item) {
 openModalBtn.addEventListener("click", openUserModal);
 closeModalBtn.addEventListener("click", closeUserModal);
 cancelModalBtn.addEventListener("click", closeUserModal);
+editCloseBtn.addEventListener("click", closeEditUserModal);
+editCancelBtn.addEventListener("click", closeEditUserModal);
 
 adminAssignForm.addEventListener("submit", function(event) {
   event.preventDefault();
@@ -2330,6 +2451,24 @@ userForm.addEventListener("submit", function(event) {
 
   if (!fullName || !username || !password || !confirmPassword || !role) return;
 
+  // Validate full name: only letters (including common accented chars) and spaces
+  try {
+    var nameRegex = /^[\p{L} ]+$/u;
+    if (!nameRegex.test(fullName)) {
+      userFormError.textContent = "Full name may only contain letters and spaces.";
+      userFormError.classList.remove("hidden");
+      return;
+    }
+  } catch (e) {
+    // Fallback for environments without Unicode property escapes
+    var fallbackNameRegex = /^[A-Za-z \u00C0-\u017F]+$/;
+    if (!fallbackNameRegex.test(fullName)) {
+      userFormError.textContent = "Full name may only contain letters and spaces.";
+      userFormError.classList.remove("hidden");
+      return;
+    }
+  }
+
   if (password !== confirmPassword) {
     userFormError.textContent = "Passwords do not match.";
     userFormError.classList.remove("hidden");
@@ -2341,12 +2480,83 @@ userForm.addEventListener("submit", function(event) {
     userFormError.classList.remove("hidden");
     return;
   }
-
-  users.push({ name: fullName, username: username, password: password, role: role, status: "Active", lastLogin: "-" });
+  // normalize username storage to lowercase to avoid case-sensitivity issues
+  var normalizedUsername = username.toLowerCase();
+  users.push({ name: fullName, username: normalizedUsername, password: password, role: role, status: "Active", lastLogin: "-" });
+  // persist users immediately so login in other tabs or after reload works
+  saveUsers();
+  saveUsers();
   userForm.reset();
   passwordToggles.forEach(function(toggle) { toggle.textContent = "\uD83D\uDC41"; });
   closeUserModal();
   rerenderVisibleDashboard();
+  if (currentUser && currentUser.role === "Admin") {
+    renderAdminAssignmentOptions();
+  }
+});
+
+editUserForm.addEventListener("submit", function(event) {
+  event.preventDefault();
+  var fullName = editFullName.value.trim();
+  var username = editUsername.value.trim();
+  var role = editRoleSelect.value;
+  var status = editStatusSelect.value;
+  var originalUsername = editOriginalUsername.value;
+
+  editUserError.textContent = "";
+  editUserError.classList.add("hidden");
+
+  if (!fullName || !username || !role || !status) return;
+
+  // Validate full name: only letters and spaces
+  try {
+    var nameRegex = /^[\p{L} ]+$/u;
+    if (!nameRegex.test(fullName)) {
+      editUserError.textContent = "Full name may only contain letters and spaces.";
+      editUserError.classList.remove("hidden");
+      return;
+    }
+  } catch (e) {
+    var fallbackNameRegex = /^[A-Za-z \u00C0-\u017F]+$/;
+    if (!fallbackNameRegex.test(fullName)) {
+      editUserError.textContent = "Full name may only contain letters and spaces.";
+      editUserError.classList.remove("hidden");
+      return;
+    }
+  }
+
+  var normalizedUsername = normalizeUsername(username);
+  var user = getUserByUsername(originalUsername);
+  if (!user || user.username === "admin") return;
+
+  if (normalizedUsername !== normalizeUsername(originalUsername) && getUserByUsername(normalizedUsername)) {
+    editUserError.textContent = "Username already exists. Use a different username.";
+    editUserError.classList.remove("hidden");
+    return;
+  }
+
+  var prevUsername = user.username;
+  var prevRole = user.role;
+
+  user.name = fullName;
+  user.username = normalizedUsername;
+  user.role = role;
+  user.status = status;
+
+  if (prevUsername !== normalizedUsername) {
+    updateUserReferences(prevUsername, normalizedUsername);
+  }
+
+  if ((prevRole === "Professor" && role !== "Professor") || status !== "Active") {
+    releaseRoomsForUser(user.username);
+  }
+
+  saveUsers();
+  saveRooms();
+  saveCheckins();
+  saveNotifications();
+  closeEditUserModal();
+  syncAllDashboards();
 });
 
 adminRoomBody.addEventListener("click", function(event) {
@@ -2412,8 +2622,33 @@ usersBody.addEventListener("click", function(event) {
   var action = target.dataset.userAction;
   var user = getUserByUsername(username);
   if (!user || user.username === "admin") return;
-  if (action === "deactivate") { user.status = "Inactive"; releaseRoomsForUser(user.username); }
+  if (action === "edit") {
+    openEditUserModal(user);
+    return;
+  }
+  if (action === "delete") {
+    if (!confirm('Delete user "' + user.username + '"? This cannot be undone.')) return;
+    releaseRoomsForUser(user.username);
+    users = users.filter(function(u){ return u.username !== user.username; });
+    if (Array.isArray(checkins)) {
+      checkins = checkins.filter(function(c){ return c.user !== user.username; });
+    }
+    if (Array.isArray(notifications)) {
+      notifications = notifications.filter(function(n){ return n.user !== user.username; });
+    }
+    saveUsers();
+    saveRooms();
+    saveCheckins();
+    saveNotifications();
+    syncAllDashboards();
+    return;
+  }
+  if (action === "deactivate") {
+    user.status = "Inactive";
+    releaseRoomsForUser(user.username);
+  }
   if (action === "reactivate") user.status = "Active";
+  saveUsers();
   syncAllDashboards();
 });
 
@@ -2453,8 +2688,7 @@ function importDataFile(file) {
         try { localStorage.setItem(CHECKINS_KEY, JSON.stringify(parsed.checkins)); } catch(e) {}
       }
       if (parsed.users) {
-        // update in-memory users for demo only
-        try { parsed.users.forEach(function(u){ if (!getUserByUsername(u.username)) users.push(u); }); } catch(e) {}
+        try { users = parsed.users.slice(); saveUsers(); } catch(e) {}
       }
       loadRooms(); loadCheckins(); rerenderVisibleDashboard(); notify('Import', 'Demo data imported');
     } catch (err) { notify('Import error', 'Invalid file'); }
