@@ -1,0 +1,2880 @@
+ <!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>ADBMS Room Availability</title>
+    <style>
+@import url("https://fonts.googleapis.com/css2?family=League+Spartan:wght@500;700;800&family=Manrope:wght@400;500;700&display=swap");
+
+:root {
+  /* color tokens (accessible palette) */
+  --bg: #F1F5F9;
+  --card: #FFFFFF;
+  --line: #E6EDF6;
+  --dark-blue: #1F4A86;
+  --text: #142433;
+  --muted: #6B7280;
+  --available: #2F8F43;
+  --danger: #D72732;
+  --primary: #1F4A86;
+  --accent: #FFC844;
+  --info: #0B84FF;
+  --hero-start: #123767;
+  --hero-mid: #1f4a86;
+  --hero-end: #2e66ae;
+  --hero-highlight: #ffc844;
+  /* fonts */
+  --font-sans: 'Manrope', Inter, system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial;
+  --font-display: 'League Spartan', var(--font-sans);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family: var(--font-sans);
+  background: var(--bg);
+  color: var(--text);
+}
+
+/* Headings use display font for stronger hierarchy */
+h1, h2, h3 { font-family: var(--font-display); }
+
+.page {
+  width: min(1320px, 96vw);
+  margin: 22px auto;
+  display: grid;
+  gap: 16px;
+}
+
+.card {
+  background: var(--card);
+  border: 1px solid #d2d7e1;
+  border-radius: 8px;
+  box-shadow: 0 3px 12px rgba(15, 32, 58, 0.1);
+}
+
+.login-screen,
+.dashboard-screen {
+  width: min(1320px, 96vw);
+  margin: 0 auto;
+  padding: clamp(28px, 3.2vw, 48px);
+  overflow: hidden;
+  position: relative;
+  border-radius: 24px;
+  border: 1px solid rgba(182, 208, 243, 0.35);
+  background:
+    radial-gradient(circle at 4% 0%, rgba(255, 255, 255, 0.22), transparent 52%),
+    linear-gradient(115deg, var(--hero-start) 0%, var(--hero-mid) 44%, var(--hero-end) 100%);
+  box-shadow: 0 20px 48px rgba(8, 24, 51, 0.28);
+}
+
+.login-screen {
+  color: #f8fbff;
+}
+
+.dashboard-screen {
+  color: var(--text);
+  padding: clamp(18px, 2.2vw, 30px);
+}
+
+.login-screen::before,
+.dashboard-screen::before {
+  content: "";
+  position: absolute;
+  width: min(32vw, 420px);
+  aspect-ratio: 1;
+  right: -90px;
+  top: -100px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(255, 255, 255, 0.22), rgba(255, 255, 255, 0));
+}
+
+.login-screen::after,
+.dashboard-screen::after {
+  content: "";
+  position: absolute;
+  width: min(38vw, 500px);
+  aspect-ratio: 1;
+  left: -150px;
+  bottom: -220px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(13, 38, 75, 0.42), rgba(13, 38, 75, 0));
+}
+
+.login-hero {
+  display: grid;
+  grid-template-columns: 1.2fr 1px minmax(210px, 0.9fr);
+  align-items: center;
+  gap: clamp(22px, 3.5vw, 48px);
+  min-height: clamp(280px, 45vh, 420px);
+  position: relative;
+  z-index: 1;
+}
+
+.dashboard-hero {
+  display: grid;
+  grid-template-columns: 1.2fr 1px minmax(190px, 0.85fr);
+  align-items: center;
+  gap: clamp(18px, 2.6vw, 34px);
+  min-height: clamp(140px, 22vh, 190px);
+  position: relative;
+  z-index: 1;
+}
+
+.login-copy {
+  animation: fadeSlide 0.8s ease both;
+}
+
+.dashboard-copy {
+  animation: fadeSlide 0.7s ease both;
+}
+
+.hero-divider {
+  width: 1px;
+  height: clamp(180px, 28vh, 300px);
+  background: linear-gradient(
+    to bottom,
+    rgba(167, 204, 247, 0),
+    rgba(167, 204, 247, 0.65) 28%,
+    rgba(167, 204, 247, 0.65) 72%,
+    rgba(167, 204, 247, 0)
+  );
+}
+
+.login-screen h1 {
+  margin: 0;
+  font-size: clamp(38px, 5vw, 74px);
+  font-family: "League Spartan", "Trebuchet MS", sans-serif;
+  font-weight: 800;
+  line-height: 0.97;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  color: #f2f7ff;
+}
+
+.login-title-line {
+  display: block;
+}
+
+.subtitle {
+  margin: 18px 0 0;
+  color: rgba(237, 245, 255, 0.9);
+  font-size: clamp(16px, 1.5vw, 28px);
+  font-weight: 500;
+  letter-spacing: 0.01em;
+}
+
+.login-brand {
+  justify-self: center;
+  width: clamp(190px, 25vw, 370px);
+  animation: logoFloat 5s ease-in-out infinite;
+  filter: drop-shadow(0 12px 18px rgba(6, 16, 33, 0.42));
+}
+
+.dashboard-brand {
+  justify-self: center;
+  width: clamp(185px, 19vw, 290px);
+  animation: logoFloat 5s ease-in-out infinite;
+  filter: drop-shadow(0 10px 15px rgba(6, 16, 33, 0.4));
+}
+
+.login-brand img {
+  width: 100%;
+  display: block;
+  object-fit: contain;
+}
+
+.dashboard-brand img {
+  width: 100%;
+  display: block;
+  object-fit: contain;
+}
+
+.dashboard-copy h2 {
+  margin: 0;
+  font-family: "League Spartan", "Trebuchet MS", sans-serif;
+  font-size: clamp(34px, 4.2vw, 62px);
+  font-weight: 800;
+  line-height: 0.95;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  color: #f2f7ff;
+}
+
+.dashboard-title-line {
+  display: block;
+}
+
+.dashboard-subtitle {
+  margin: 14px 0 0;
+  color: rgba(237, 245, 255, 0.9);
+  font-size: clamp(15px, 1.3vw, 22px);
+  font-weight: 500;
+  letter-spacing: 0.01em;
+}
+
+.dashboard-main {
+  margin-top: 12px;
+  border: 1px solid rgba(189, 214, 247, 0.34);
+  border-radius: 14px;
+  background: rgba(5, 18, 42, 0.42);
+  backdrop-filter: blur(2px);
+  overflow: hidden;
+  position: relative;
+  z-index: 1;
+}
+
+/* Motion & effects */
+.status-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 10px;
+  border-radius: 999px;
+  font-weight: 600;
+  font-size: 13px;
+  transition: transform 160ms ease, box-shadow 160ms ease, opacity 180ms ease;
+  will-change: transform, box-shadow;
+}
+.status-pill:hover { transform: translateY(-3px) scale(1.02); box-shadow: 0 8px 20px rgba(19,38,104,0.12); }
+.status-available { background: rgba(47,143,67,0.12); color: var(--available); }
+.status-occupied { background: rgba(215,39,50,0.08); color: var(--danger); }
+
+@keyframes rowFlash {
+  0% { background-color: rgba(255,216,120,0.95); }
+  60% { background-color: rgba(255,236,180,0.6); }
+  100% { background-color: transparent; }
+}
+.row-flash { animation: rowFlash 900ms ease forwards; }
+
+/* Respect user's reduced motion preference */
+@media (prefers-reduced-motion: reduce) {
+  .status-pill, .row-flash { transition: none !important; animation: none !important; }
+  .dashboard-brand, .login-brand { animation: none !important; }
+}
+
+.login-body {
+  width: min(520px, 100%);
+  margin: 14px auto 0;
+  padding: 20px 22px 18px;
+  border: 1px solid rgba(189, 214, 247, 0.36);
+  border-radius: 14px;
+  background: rgba(5, 18, 42, 0.44);
+  backdrop-filter: blur(2px);
+  position: relative;
+  z-index: 1;
+}
+
+.login-form-title {
+  margin: 0 0 14px;
+  color: rgba(243, 250, 255, 0.92);
+  font-weight: 700;
+  font-size: 15px;
+  letter-spacing: 0.02em;
+}
+
+.login-form {
+  display: grid;
+  gap: 12px;
+}
+
+.form-group {
+  display: grid;
+  gap: 6px;
+}
+
+.form-group label {
+  font-size: 13px;
+  font-weight: 700;
+  color: rgba(228, 240, 255, 0.92);
+}
+
+.login-body input {
+  height: 42px;
+  border: 1px solid rgba(188, 214, 248, 0.4);
+  border-radius: 8px;
+  color: #f7fbff;
+  background: rgba(8, 29, 59, 0.55);
+}
+
+.login-body input::placeholder {
+  color: rgba(199, 216, 238, 0.86);
+}
+
+.login-body .password-field input {
+  width: 100%;
+}
+
+.login-body .toggle-password {
+  color: rgba(225, 237, 255, 0.92);
+}
+
+.login-btn {
+  height: 44px;
+  font-size: 15px;
+  margin-top: 6px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  background: linear-gradient(135deg, #ffd86d, #f5b634);
+  color: #15335f;
+}
+
+.error-msg {
+  margin: 2px 0 0;
+  color: #ffd7de;
+  font-weight: 600;
+}
+
+.demo-accounts {
+  margin-top: 14px;
+  padding-top: 12px;
+  border-top: 1px solid rgba(195, 217, 247, 0.3);
+  color: rgba(227, 238, 255, 0.94);
+  font-size: 13px;
+}
+
+.demo-accounts p {
+  margin: 4px 0;
+}
+
+.demo-accounts span {
+  color: #ffd870;
+  font-weight: 600;
+}
+
+@keyframes fadeSlide {
+  from {
+    opacity: 0;
+    transform: translateX(-12px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes logoFloat {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+
+  50% {
+    transform: translateY(-10px);
+  }
+}
+
+.window-title {
+  height: 54px;
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 20px;
+  border-top-left-radius: 8px;
+  border-top-right-radius: 8px;
+}
+
+.window-title h2 {
+  margin: 0;
+  font-size: 32px;
+  font-weight: 700;
+}
+
+.icons {
+  display: flex;
+  gap: 12px;
+  font-size: 14px;
+}
+
+.admin-title {
+  background: linear-gradient(135deg, #2f5c93, #1a3f6a);
+}
+
+.prof-title {
+  background: linear-gradient(135deg, #2f2a58, #31295c 45%, #3f3169);
+}
+
+.student-title {
+  background: linear-gradient(135deg, #24546f, #1b6076);
+}
+
+.hidden {
+  display: none !important;
+}
+
+.admin-window {
+  position: relative;
+}
+
+.admin-body {
+  display: grid;
+  grid-template-columns: 220px 1fr;
+  min-height: 460px;
+}
+
+.sidebar {
+  border-right: 1px solid rgba(189, 214, 247, 0.3);
+  padding: 8px 0;
+  background: rgba(7, 26, 53, 0.5);
+}
+
+.nav-item {
+  width: 100%;
+  text-align: left;
+  border: none;
+  border-bottom: 1px solid rgba(189, 214, 247, 0.23);
+  background: transparent;
+  padding: 13px 16px;
+  font-size: 17px;
+  cursor: pointer;
+  color: #e4efff;
+}
+
+.nav-item {
+  transition: background-color 160ms ease, transform 120ms ease, box-shadow 160ms ease;
+}
+
+/* subtle hover for pointer users; do not override active style */
+.nav-item:not(.active):hover {
+  background: rgba(255, 255, 255, 0.04);
+  transform: translateY(-1px);
+  box-shadow: 0 6px 18px rgba(8, 24, 51, 0.06);
+}
+
+/* keyboard focus visible state */
+.nav-item:focus-visible {
+  outline: 2px solid rgba(255, 200, 68, 0.9);
+  outline-offset: 2px;
+}
+
+.nav-item.active {
+  background: rgba(255, 208, 87, 0.95);
+  color: #14315d;
+  font-weight: 600;
+}
+
+/* UI polish: row and card hover, button lift, and subtle animations */
+.card,
+.dashboard-main,
+.panel {
+  transition: transform 220ms ease, box-shadow 220ms ease;
+}
+.card:hover,
+.dashboard-main:hover,
+.panel:hover {
+  transform: translateY(-6px);
+  box-shadow: 0 18px 36px rgba(16, 36, 77, 0.12);
+}
+
+/* Table row hover and entrance animation */
+.table-scroll tbody tr {
+  transition: transform 160ms ease, box-shadow 160ms ease, background-color 160ms ease;
+  will-change: transform, box-shadow, background-color;
+  animation: rowIn 260ms ease both;
+}
+.table-scroll tbody tr:hover {
+  transform: translateY(-6px);
+  box-shadow: 0 8px 20px rgba(8, 24, 51, 0.06);
+}
+
+@keyframes rowIn {
+  from { opacity: 0; transform: translateY(6px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* Buttons: subtle scale + shadow on hover, strong focus state */
+.primary:hover, .action-btn:hover, .danger-btn:hover, .secondary:hover {
+  transform: translateY(-3px) scale(1.01);
+  box-shadow: 0 10px 20px rgba(15, 32, 58, 0.12);
+}
+.primary:focus-visible, .action-btn:focus-visible, .danger-btn:focus-visible, .secondary:focus-visible {
+  outline: 3px solid rgba(255,200,68,0.18);
+  outline-offset: 3px;
+}
+
+/* Disabled button appearance: dim and non-interactive */
+.action-btn:disabled,
+.action-btn[disabled],
+.primary:disabled,
+button[disabled] {
+  opacity: 0.56;
+  filter: grayscale(24%) brightness(92%);
+  cursor: not-allowed;
+  transform: none !important;
+  box-shadow: none !important;
+  pointer-events: none;
+}
+
+/* Status pill micro-interaction */
+.status-pill {
+  transition: transform 140ms ease, box-shadow 140ms ease, background-color 160ms ease;
+}
+.status-active:hover { transform: translateY(-2px); box-shadow: 0 6px 12px rgba(47,143,67,0.12); }
+.status-inactive:hover { transform: translateY(-2px); box-shadow: 0 6px 12px rgba(89,97,115,0.08); }
+
+/* subtle animated shimmer for hero banner highlight */
+.login-screen::before, .dashboard-screen::before {
+  transition: opacity 600ms ease, transform 600ms ease;
+}
+
+.content {
+  padding: 14px 16px 18px;
+  background: rgba(4, 16, 37, 0.12);
+}
+
+.view h1 {
+  margin: 0 0 14px;
+  color: #edf4ff;
+}
+
+.panel {
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #fefefe;
+  padding: 14px;
+}
+
+/* Small dashboard stat cards shown above tables */
+.stat-cards {
+  display: flex;
+  gap: 12px;
+  margin: 10px 0 12px;
+}
+.stat-card {
+  flex: 1;
+  background: linear-gradient(180deg, #fbfdff, #eef5ff);
+  border: 1px solid var(--line);
+  padding: 12px 14px;
+  border-radius: 8px;
+  text-align: center;
+}
+.stat-card .stat-title {
+  font-size: 13px;
+  font-weight: 700;
+  color: #21406c;
+  margin-bottom: 6px;
+}
+.stat-card .stat-value {
+  font-size: 28px;
+  font-weight: 800;
+  color: #15335f;
+}
+
+.panel h3,
+.inner h3 {
+  margin: 0 0 10px;
+  font-size: 37px;
+  color: #203f70;
+}
+
+.dashboard-main .inner h3 {
+  color: #eef5ff;
+}
+
+.panel p,
+.dashboard-main table {
+  color: #2a3448;
+}
+
+.manage-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 12px;
+}
+
+.panel-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-bottom: 10px;
+}
+
+.panel-header h3 {
+  margin-bottom: 0;
+}
+
+.assign-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.assign-toolbar select {
+  min-width: 180px;
+  height: 40px;
+}
+
+.assign-toolbar .primary {
+  height: 40px;
+  padding-inline: 16px;
+}
+
+.panel .form-error {
+  margin: 0 0 10px;
+}
+
+.manage-header h1 {
+  margin: 0;
+  color: #edf4ff;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  background: #fff;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  overflow: hidden;
+}
+
+thead tr {
+  background: #3c4658;
+  color: #fff;
+}
+
+th,
+td {
+  border: 1px solid #d9dde6;
+  text-align: left;
+  padding: 9px 12px;
+}
+
+.table-scroll {
+  max-height: min(360px, 42vh);
+  overflow-y: auto;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: #fff;
+}
+
+.table-scroll table {
+  border: none;
+  border-radius: 0;
+}
+
+.table-scroll thead th {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+}
+
+.section-row td {
+  background: #e7eef9;
+  color: #21406c;
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.occupied-row {
+  background: #ef2d3a;
+  color: #fff;
+}
+
+.available {
+  color: var(--available);
+  font-weight: 700;
+}
+
+.occupied {
+  color: var(--danger);
+  font-weight: 700;
+}
+
+.occupied-row .occupied,
+.occupied-row .available {
+  color: #fff;
+}
+
+.inactive-user-row {
+  background: #f2f3f6;
+  color: #6a7180;
+}
+
+.status-pill {
+  display: inline-block;
+  min-width: 78px;
+  padding: 4px 10px;
+  border-radius: 999px;
+  text-align: center;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.status-active {
+  background: rgba(47, 143, 67, 0.12);
+  color: #27773a;
+}
+
+.status-inactive {
+  background: rgba(125, 132, 148, 0.16);
+  color: #596173;
+}
+
+.user-toggle-btn {
+  min-width: 96px;
+}
+
+.action-group {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.action-note {
+  color: #5c6475;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.primary,
+.secondary,
+.ghost,
+.action-btn,
+.danger-btn {
+  border: none;
+  border-radius: 6px;
+  padding: 8px 14px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.primary,
+.action-btn {
+  color: #fff;
+  background: linear-gradient(135deg, #2e5d93, #1e487e);
+}
+
+.login-btn.primary {
+  background: linear-gradient(135deg, #ffd86d, #f5b634);
+  color: #15335f;
+}
+
+.secondary {
+  color: #374156;
+  background: #e5e8ef;
+}
+
+.ghost {
+  background: transparent;
+  color: #4b5468;
+  font-size: 18px;
+  padding: 2px 8px;
+}
+
+.danger-btn {
+  color: #fff;
+  background: #d92534;
+}
+
+.role-window {
+  max-width: none;
+  margin: 0 auto;
+}
+
+.inner {
+  padding: 14px 16px 18px;
+}
+
+.logout {
+  margin-top: 10px;
+}
+
+.student-note {
+  margin: 10px 0 0;
+  border: 1px solid #d3d7e1;
+  border-radius: 4px;
+  background: #fbfbfc;
+  padding: 8px 10px;
+  font-weight: 600;
+}
+
+.badge {
+  display: inline-block;
+  margin-left: 8px;
+  padding: 2px 7px;
+  border-radius: 999px;
+  font-size: 11px;
+  background: #b81f2d;
+  color: #fff;
+}
+
+.modal {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 22px 14px;
+  background: rgba(8, 16, 32, 0.58);
+  backdrop-filter: blur(2px);
+  z-index: 2000;
+}
+
+.modal-card {
+  width: min(520px, 94vw);
+  max-height: min(88vh, 760px);
+  overflow: auto;
+  background: #f6f7fa;
+  border: 1px solid #d7dbe4;
+  border-radius: 8px;
+  box-shadow: 0 8px 20px rgba(18, 31, 54, 0.15);
+}
+
+.modal-head {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 1px solid var(--line);
+  padding: 12px 14px;
+  background: #f6f7fa;
+}
+
+.modal-head h3 {
+  margin: 0;
+}
+
+.modal-body {
+  display: grid;
+  gap: 10px;
+  padding: 14px;
+}
+
+input,
+select {
+  height: 38px;
+  border: 1px solid #cdd2dc;
+  border-radius: 4px;
+  padding: 0 10px;
+  font-size: 14px;
+  background: #fff;
+}
+
+.floor-filter {
+  height: 30px;
+  font-size: 13px;
+  padding: 4px 8px;
+  border-radius: 6px;
+  margin-left: 8px;
+}
+
+.password-field {
+  position: relative;
+}
+
+.password-field input {
+  width: 100%;
+  padding-right: 42px;
+}
+
+.toggle-password {
+  position: absolute;
+  top: 50%;
+  right: 8px;
+  transform: translateY(-50%);
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  font-size: 16px;
+  color: #4e5870;
+  padding: 4px;
+}
+
+.form-error {
+  margin: -2px 0 0;
+  color: #cc2534;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.form-actions {
+  margin-top: 4px;
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+@media (max-width: 1366px) and (min-width: 1051px) {
+  .page {
+    width: min(1200px, 94vw);
+    margin: 12px auto;
+    gap: 12px;
+  }
+
+  .dashboard-screen {
+    padding: 16px 18px;
+    border-radius: 20px;
+  }
+
+  .dashboard-copy h2 {
+    font-size: clamp(30px, 3.4vw, 46px);
+  }
+
+  .dashboard-subtitle {
+    margin-top: 10px;
+    font-size: clamp(14px, 1.15vw, 18px);
+  }
+
+  .dashboard-brand {
+    width: clamp(145px, 13vw, 190px);
+  }
+
+  .admin-body {
+    grid-template-columns: 190px 1fr;
+    min-height: 0;
+  }
+
+  .nav-item {
+    padding: 11px 12px;
+    font-size: 15px;
+  }
+
+  .view h1 {
+    margin-bottom: 10px;
+    font-size: clamp(30px, 2.3vw, 38px);
+  }
+
+  .panel h3,
+  .inner h3 {
+    margin-bottom: 8px;
+    font-size: clamp(28px, 2.4vw, 40px);
+  }
+
+  .assign-toolbar select {
+    min-width: 150px;
+  }
+
+  .table-scroll {
+    max-height: min(300px, 36vh);
+  }
+
+  th,
+  td {
+    padding: 7px 10px;
+    font-size: 14px;
+  }
+
+  .action-btn,
+  .danger-btn,
+  .primary,
+  .secondary {
+    padding: 7px 12px;
+    font-size: 14px;
+  }
+}
+
+@media (max-width: 1050px) {
+  .login-screen {
+    padding: 26px 22px;
+  }
+
+  .dashboard-screen {
+    padding: 26px 22px;
+  }
+
+  .login-hero {
+    grid-template-columns: 1fr;
+    gap: 16px;
+    min-height: 0;
+  }
+
+  .dashboard-hero {
+    grid-template-columns: 1fr;
+    gap: 14px;
+    min-height: 0;
+  }
+
+  .hero-divider {
+    display: none;
+  }
+
+  .login-brand {
+    justify-self: start;
+    width: clamp(170px, 52vw, 300px);
+  }
+
+  .dashboard-brand {
+    justify-self: start;
+    width: clamp(130px, 38vw, 200px);
+  }
+
+  .subtitle {
+    margin-top: 12px;
+  }
+
+  .login-body {
+    margin: 18px auto 0;
+  }
+
+  .admin-body {
+    grid-template-columns: 1fr;
+  }
+
+  .sidebar {
+    display: flex;
+    border-right: none;
+    border-bottom: 1px solid var(--line);
+    overflow-x: auto;
+  }
+
+  .nav-item {
+    min-width: 160px;
+    border-bottom: none;
+    border-right: 1px solid #dee2ea;
+  }
+
+  .window-title h2 {
+    font-size: 24px;
+  }
+
+  .panel h3,
+  .inner h3 {
+    font-size: 30px;
+  }
+}
+
+@media (max-width: 640px) {
+  .page {
+    margin: 14px auto;
+  }
+
+  .login-screen {
+    border-radius: 16px;
+    padding: 18px 14px;
+  }
+
+  .dashboard-screen {
+    border-radius: 16px;
+    padding: 18px 14px;
+  }
+
+  .login-screen h1 {
+    font-size: clamp(30px, 10vw, 52px);
+  }
+
+  .login-body {
+    padding: 16px 14px;
+  }
+
+  .dashboard-main {
+    margin-top: 14px;
+  }
+
+  .dashboard-copy h2 {
+    font-size: clamp(30px, 9.2vw, 48px);
+  }
+
+  .assign-toolbar {
+    width: 100%;
+  }
+
+  .assign-toolbar select,
+  .assign-toolbar .primary {
+    width: 100%;
+  }
+}
+
+/* Toast / Notification styles */
+.toast-container {
+  position: fixed;
+  top: 18px;
+  right: 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  z-index: 9999;
+  pointer-events: none;
+}
+.toast {
+  pointer-events: auto;
+  min-width: 260px;
+  max-width: 360px;
+  background: linear-gradient(180deg, #ffffff, #f3f6fb);
+  color: var(--text);
+  border-radius: 10px;
+  box-shadow: 0 8px 20px rgba(16,24,40,0.12);
+  padding: 10px 12px;
+  border-left: 4px solid var(--hero-highlight);
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+}
+.toast .title { font-weight: 700; margin: 0; font-size: 14px; }
+.toast .msg { margin: 2px 0 0; font-size: 13px; color: #253040; }
+.toast .actions { margin-left: auto; display:flex; gap:8px; }
+.toast .btn { background: transparent; border: none; color: var(--hero-mid); cursor: pointer; font-weight:600; }
+.toast.fade-out { opacity: 0; transform: translateY(-6px); transition: all 260ms ease; }
+.flash-highlight { animation: flashBg 1.2s ease; }
+@keyframes flashBg {
+  0% { box-shadow: 0 0 0 0 rgba(255,200,0,0.0); background-color: rgba(255,250,220,0.0); }
+  10% { background-color: rgba(255,250,220,0.95); }
+  60% { background-color: rgba(255,250,220,0.4); }
+  100% { background-color: transparent; }
+}
+/* Legend and occupied pulse */
+.legend { display:flex; gap:12px; align-items:center; margin-left:10px; }
+.legend .item { display:flex; gap:6px; align-items:center; font-weight:600; color:var(--muted); }
+.legend .dot { width:12px; height:12px; border-radius:50%; display:inline-block; }
+.legend .available { background: var(--available); }
+.legend .occupied { background: var(--danger); }
+.legend .label { font-size:13px; color:var(--muted); }
+.occupied-row { animation: occupiedPulse 3.6s ease-in-out infinite; }
+@keyframes occupiedPulse { 0% { box-shadow: 0 0 0 0 rgba(215,39,50,0.06);} 50% { box-shadow: 0 10px 30px rgba(215,39,50,0.03);} 100% { box-shadow: 0 0 0 0 rgba(215,39,50,0.0);} }
+
+/* Status pill styles (accessible, icon + label) */
+.status-pill { display:inline-flex; gap:8px; align-items:center; padding:6px 10px; border-radius:999px; font-weight:700; font-size:13px; }
+.status-available { background: rgba(47,143,67,0.12); color: #1b5e34; }
+.status-occupied { background: rgba(215,39,50,0.12); color: #7b1216; }
+.status-info { background: rgba(11,132,255,0.08); color: var(--info); }
+
+/* Ensure focus visibility for interactive controls */
+:focus-visible { outline: 3px solid rgba(255,200,68,0.18); outline-offset: 2px; }
+
+/* Respect reduced-motion preference */
+@media (prefers-reduced-motion: reduce) {
+  * { animation-duration: 0.001ms !important; animation-iteration-count: 1 !important; transition-duration: 0.001ms !important; }
+}
+
+/* Global toolbar for demo controls */
+.global-toolbar { display:flex; align-items:center; gap:8px; justify-content:flex-end; padding:6px 10px; }
+.global-toolbar .ghost { border-radius:6px; padding:6px 10px; background:transparent; }
+.global-toolbar .ghost:hover { background: rgba(255,255,255,0.04); transform: translateY(-2px); }
+/* last-action note */
+.last-action-note {
+  margin-left: 12px;
+  background: rgba(255,255,255,0.95);
+  color: #15335f;
+  padding: 6px 10px;
+  border-radius: 8px;
+  font-weight:700;
+  box-shadow: 0 6px 18px rgba(16,24,40,0.08);
+  opacity: 0;
+  transform: translateY(-6px);
+  transition: opacity 260ms ease, transform 260ms ease;
+}
+.last-action-note.visible { opacity: 1; transform: translateY(0); }
+    .student-info {
+      display:flex;
+      flex-direction:column;
+      gap:4px;
+      color: #eef5ff;
+    }
+    .student-name { font-weight:800; font-size:20px; letter-spacing:0.02em; }
+    .student-meta { font-size:14px; color: rgba(238,245,255,0.85); font-weight:600; }
+
+    </style>
+  </head>
+  <body>
+    <!-- Toast container for in-page notifications -->
+    <div id="toastContainer" class="toast-container" aria-live="polite"></div>
+    <main class="page">
+      <section id="loginScreen" class="login-screen card">
+        <div class="login-hero">
+          <div class="login-copy">
+            <h1>
+              <span class="login-title-line">DECEPTICON ACADEMY</span>
+              <span class="login-title-line">of EXCELLENCE</span>
+            </h1>
+            <p class="subtitle">Automated Room Availability Dashboard</p>
+          </div>
+          <div class="hero-divider" aria-hidden="true"></div>
+          <div class="login-brand">
+            <img src="Copilot_20260314_215117.png" alt="Decepticon Academy logo" />
+          </div>
+        </div>
+        <div class="login-body">
+          <p class="login-form-title">SIGN IN TO CONTINUE</p>
+          <form id="loginForm" class="login-form">
+            <div class="form-group">
+              <label for="loginUsername">Username</label>
+              <input id="loginUsername" type="text" placeholder="Enter your username" required />
+            </div>
+            <div class="form-group">
+              <label for="loginPassword">Password</label>
+              <div class="password-field">
+                <input id="loginPassword" type="password" placeholder="Enter your password" required />
+                <button type="button" class="toggle-password" data-toggle-password="loginPassword" aria-label="Show password">&#128065;</button>
+              </div>
+            </div>
+            <button type="submit" class="primary login-btn">Log In</button>
+            <p id="loginError" class="error-msg hidden">Invalid username or password.</p>
+          </form>
+          <div class="demo-accounts">
+            <strong>Demo Accounts:</strong>
+            <p>Admin: <span>admin / admin123</span></p>
+            <p>Professor: <span>psantos / prof123</span></p>
+            <p>Student: <span>jdc / student123</span></p>
+          </div>
+        </div>
+      </section>
+
+      <section id="adminDashboard" class="admin-window dashboard-screen card hidden">
+        <div class="dashboard-hero">
+          <div class="dashboard-copy">
+            <h2>
+              <span class="dashboard-title-line">ADMIN CONTROL</span>
+              <span class="dashboard-title-line">PANEL</span>
+            </h2>
+            <p class="dashboard-subtitle">Automated Room Availability Dashboard</p>
+          </div>
+          <div class="hero-divider" aria-hidden="true"></div>
+          <div class="dashboard-brand">
+            <img src="Copilot_20260314_215117.png" alt="Decepticon Academy logo" />
+          </div>
+        </div>
+
+        <div class="dashboard-main">
+          <div class="admin-body">
+            <aside class="sidebar">
+              <button class="nav-item active" data-admin-view="dashboard">&#127968; Dashboard</button>
+              <button class="nav-item" data-admin-view="manage">&#128101; Manage Users</button>
+              <button class="nav-item" data-admin-view="reports">&#128232; Reports</button>
+              <button class="nav-item" data-admin-view="settings">&#9881; Settings</button>
+              <button id="adminLogoutBtn" class="nav-item">&#8617; Log Out</button>
+            </aside>
+
+            <section class="content">
+              <div id="adminViewDashboard" class="view">
+                <h1 id="adminWelcome">Welcome, Admin!</h1>
+                <div class="stat-cards" aria-hidden="false">
+                  <div class="stat-card">
+                    <div class="stat-title">Rooms Available</div>
+                    <div id="roomsAvailableCount" class="stat-value">0</div>
+                  </div>
+                  <div class="stat-card">
+                    <div class="stat-title">Rooms Occupied</div>
+                    <div id="roomsOccupiedCount" class="stat-value">0</div>
+                  </div>
+                  <div class="stat-card">
+                    <div class="stat-title">Current Utilization</div>
+                    <div id="utilizationPercent" class="stat-value">0%</div>
+                  </div>
+                  <div class="stat-card">
+                    <div class="stat-title">Today's Check‑ins</div>
+                    <div id="todaysCheckinsCount" class="stat-value">0</div>
+                  </div>
+                </div>
+                <div class="panel">
+                  <div class="panel-header">
+                    <h3>Room Availability</h3>
+                    <form id="adminAssignForm" class="assign-toolbar">
+                      <select id="adminProfessorSelect" aria-label="Select professor">
+                        <option value="">Select professor</option>
+                      </select>
+                      <select id="adminRoomSelect" aria-label="Select room">
+                        <option value="">Select room</option>
+                      </select>
+                      <button type="submit" class="primary">Assign Room</button>
+                    </form>
+                  </div>
+                  <p id="adminAssignError" class="form-error hidden"></p>
+                  <div class="table-scroll">
+                    <table>
+                      <thead>
+                        <tr>
+                            <th>Rooms <select id="adminFloorSelect" class="floor-filter"><option value="">All</option></select></th>
+                            <th>Status <select id="adminStatusSelect" class="status-filter"><option value="">All</option></select></th>
+                            <th>Current Professor</th>
+                            <th>Since</th>
+                            <th>Action</th>
+                          </tr>
+                      </thead>
+                      <tbody id="adminRoomBody"></tbody>
+                    </table>
+                  </div>
+                </div>
+              </div>
+
+              <div id="adminViewManage" class="view hidden">
+                <div class="manage-header">
+                  <h1>Manage Users</h1>
+                  <button id="openModalBtn" class="primary">+ Add New User</button>
+                </div>
+                <table>
+                  <thead>
+                    <tr>
+                      <th>Name</th>
+                      <th>Username</th>
+                      <th>Role</th>
+                      <th>Status</th>
+                      <th>Last Login</th>
+                      <th>Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody id="usersBody"></tbody>
+                </table>
+              </div>
+
+              <div id="adminViewReports" class="view hidden">
+                <h1>Reports</h1>
+                <div class="panel">
+                  <p>Room activity report view is ready for backend integration.</p>
+                </div>
+              </div>
+
+              <div id="adminViewSettings" class="view hidden">
+                <h1>Settings</h1>
+                <div class="panel">
+                  <p>System settings panel is active and ready for configuration options.</p>
+                </div>
+              </div>
+            </section>
+          </div>
+        </div>
+
+        <div id="addUserModal" class="modal hidden">
+          <div class="modal-card">
+            <div class="modal-head">
+              <h3>Add New User</h3>
+              <button id="closeModalBtn" class="ghost" type="button">&#10005;</button>
+            </div>
+            <form id="userForm" class="modal-body">
+              <input type="text" id="fullName" placeholder="Full Name" required pattern="[A-Za-z \u00C0-\u017F]+" title="Only letters and spaces allowed" />
+              <input type="text" id="username" placeholder="Username" required />
+              <div class="password-field">
+                <input type="password" id="password" placeholder="Password" required />
+                <button type="button" class="toggle-password" data-toggle-password="password" aria-label="Show password">&#128065;</button>
+              </div>
+              <div class="password-field">
+                <input type="password" id="confirmPassword" placeholder="Confirm Password" required />
+                <button type="button" class="toggle-password" data-toggle-password="confirmPassword" aria-label="Show confirm password">&#128065;</button>
+              </div>
+              <label for="roleSelect">Role:</label>
+              <select id="roleSelect" required>
+                <option value="Professor">Professor</option>
+                <option value="Student">Student</option>
+                <option value="Admin">Admin</option>
+              </select>
+              <p id="userFormError" class="form-error hidden"></p>
+              <div class="form-actions">
+                <button type="submit" class="primary">Add User</button>
+                <button type="button" id="cancelModalBtn" class="secondary">Cancel</button>
+              </div>
+            </form>
+          </div>
+        </div>
+        <div id="editUserModal" class="modal hidden" aria-hidden="true">
+          <div class="modal-card">
+            <div class="modal-head">
+              <h3>Edit User</h3>
+              <button id="editCloseBtn" class="ghost" type="button">&#10005;</button>
+            </div>
+            <form id="editUserForm" class="modal-body">
+              <input type="text" id="editFullName" placeholder="Full Name" required pattern="[A-Za-z \u00C0-\u017F]+" title="Only letters and spaces allowed" />
+              <input type="text" id="editUsername" placeholder="Username" required />
+              <input type="hidden" id="editOriginalUsername" />
+              <label for="editRoleSelect">Role:</label>
+              <select id="editRoleSelect" required>
+                <option value="Professor">Professor</option>
+                <option value="Student">Student</option>
+                <option value="Admin">Admin</option>
+              </select>
+              <label for="editStatusSelect">Status:</label>
+              <select id="editStatusSelect" required>
+                <option value="Active">Active</option>
+                <option value="Inactive">Inactive</option>
+              </select>
+              <p id="editUserError" class="form-error hidden"></p>
+              <div class="form-actions">
+                <button type="submit" class="primary">Save Changes</button>
+                <button type="button" id="editCancelBtn" class="secondary">Cancel</button>
+              </div>
+            </form>
+          </div>
+        </div>
+        <div id="editRoomModal" class="modal hidden" aria-hidden="true">
+          <div class="modal-card">
+            <div class="modal-head">
+              <h3>Edit Room Status</h3>
+              <button id="editRoomCloseBtn" class="ghost" type="button">✕</button>
+            </div>
+            <form id="editRoomForm" class="modal-body">
+              <input type="hidden" id="editRoomNumber" />
+              <label for="editRoomStatusSelect">Status:</label>
+              <select id="editRoomStatusSelect" required>
+                <option value="available">Available</option>
+                <option value="reserved">Reserved</option>
+                <option value="maintenance">Maintenance</option>
+              </select>
+              <p id="editRoomError" class="form-error hidden"></p>
+              <div class="form-actions">
+                <button type="submit" id="editRoomSaveBtn" class="primary">Save</button>
+                <button type="button" id="editRoomCancelBtn" class="secondary">Cancel</button>
+              </div>
+            </form>
+          </div>
+        </div>
+        <div id="studentHistoryModal" class="modal hidden" aria-hidden="true">
+          <div class="modal-card">
+            <div class="modal-head">
+              <h3>Recent Check-ins</h3>
+              <button id="studentHistoryClose" class="ghost" type="button">✕</button>
+            </div>
+            <div class="modal-body" style="max-height:60vh;overflow:auto;padding:12px;">
+              <!-- populated dynamically -->
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section id="professorDashboard" class="role-window dashboard-screen card hidden">
+        <div class="dashboard-hero">
+          <div class="dashboard-copy">
+            <h2 id="professorWelcome">Welcome, Prof. Santos!</h2>
+            <p class="dashboard-subtitle">Professor Room Availability Panel</p>
+          </div>
+          <div class="hero-divider" aria-hidden="true"></div>
+          <div class="dashboard-brand">
+            <img src="Copilot_20260314_215117.png" alt="Decepticon Academy logo" />
+          </div>
+        </div>
+        <div class="dashboard-main">
+          <div class="inner">
+            <h3>Room Availability</h3>
+            <div class="stat-cards" aria-hidden="false">
+              <div class="stat-card">
+                <div class="stat-title">Assigned / Checked In (You)</div>
+                <div id="profAssignedRoom" class="stat-value">-</div>
+              </div>
+              <div class="stat-card">
+                <div class="stat-title">Schedule Time</div>
+                <div id="profScheduleTime" class="stat-value">Schedule Time</div>
+              </div>
+              <div class="stat-card">
+                <div class="stat-title">Section/Block</div>
+                <div id="profSectionBlock" class="stat-value">Section/Block</div>
+              </div>
+              <div class="stat-card">
+                <div class="stat-title">My Utilization</div>
+                <div id="profUtilizationPercent" class="stat-value">0%</div>
+              </div>
+            </div>
+            <div class="table-scroll">
+              <table>
+                <thead>
+                  <tr>
+                  <th>Rooms <select id="profFloorSelect" class="floor-filter"><option value="">All</option></select></th>
+                    <th>Status</th>
+                    <th>Since</th>
+                    <th>Action</th>
+                  </tr>
+                </thead>
+                <tbody id="profRoomBody"></tbody>
+              </table>
+            </div>
+            <button id="profLogoutBtn" class="primary logout">Log Out</button>
+          </div>
+        </div>
+      </section>
+
+      <section id="studentDashboard" class="role-window dashboard-screen card hidden">
+        <div class="dashboard-hero">
+          <div class="dashboard-copy">
+            <h2>
+              <span class="dashboard-title-line">STUDENT ROOM</span>
+              <span class="dashboard-title-line">AVAILABILITY</span>
+            </h2>
+            <div id="studentInfo" class="student-info">
+              <div class="student-name">Student Name</div>
+              <div class="student-meta">Block • Program</div>
+            </div>
+          </div>
+          <div class="hero-divider" aria-hidden="true"></div>
+          <div class="dashboard-brand">
+            <img src="Copilot_20260314_215117.png" alt="Decepticon Academy logo" />
+          </div>
+        </div>
+        <div class="dashboard-main">
+          <div class="inner">
+            <h3>Room Availability</h3>
+            <div class="assign-toolbar" style="margin-bottom:10px;">
+              <label for="studentFloorSelect" style="font-weight:700;margin-right:8px;color:#eef5ff">Filter:</label>
+              <select id="studentFloorSelect" class="floor-filter" aria-label="Filter by floor"></select>
+              <input id="studentSearch" type="search" placeholder="Search room" style="margin-left:8px;padding:6px 10px;border-radius:6px;border:1px solid #cdd2dc;" aria-label="Search room number or professor" />
+              <button id="studentHistoryBtn" class="ghost" style="margin-left:8px;">History</button>
+              <div class="legend" aria-hidden="false" style="margin-left:12px;">
+                <div class="item"><span class="dot available" aria-hidden="true"></span>Available</div>
+                <div class="item"><span class="dot occupied" aria-hidden="true"></span>Occupied</div>
+              </div>
+            </div>
+            <div class="table-scroll">
+              <table>
+                <thead>
+                  <tr>
+                    <th></th>
+                    <th>Rooms</th>
+                    <th>Status</th>
+                    <th>Since</th>
+                    <th>Professor</th>
+                  </tr>
+                </thead>
+                <tbody id="studentRoomBody"></tbody>
+              </table>
+            </div>
+            <p id="studentNote" class="student-note" aria-live="polite"></p>
+            <div style="display:flex;align-items:center;gap:12px;margin-top:8px;">
+              <div id="lastUpdated" style="color:#5c6475;font-weight:600">Last updated: -</div>
+            </div>
+            <button id="studentLogoutBtn" class="primary logout">Log Out</button>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <script>
+const defaultUsers = [
+  { name: "System Admin", username: "admin", password: "admin123", role: "Admin", status: "Active", lastLogin: "Mar 14" },
+  { name: "Recto Santos", username: "psantos", password: "prof123", role: "Professor", status: "Active", lastLogin: "Mar 14" },
+  { name: "Juan Dela Cruz", username: "jdc", password: "student123", role: "Student", status: "Active", lastLogin: "Mar 13" },
+];
+
+let users = defaultUsers.slice();
+
+const rooms = (function() {
+  var roomList = [];
+  [1, 2, 3, 4, 5].forEach(function(floor) {
+    for (var unit = 1; unit <= 9; unit += 1) {
+      roomList.push({ room: floor * 100 + unit, occupiedBy: null });
+    }
+  });
+
+  var defaultOccupiedRoom = roomList.find(function(room) { return room.room === 407; });
+  if (defaultOccupiedRoom) {
+    defaultOccupiedRoom.occupiedBy = "psantos";
+  }
+
+  return roomList;
+})();
+
+// Persistent rooms/checkins keys
+const ROOMS_KEY = 'adbms_rooms_v1';
+const CHECKINS_KEY = 'adbms_checkins_v1';
+const USERS_KEY = 'adbms_users_v1';
+const LAST_CHANGE_KEY = 'adbms_last_change_v1';
+
+// in-memory checkins log
+let checkins = [];
+
+function saveRooms() {
+  try { localStorage.setItem(ROOMS_KEY, JSON.stringify(rooms)); } catch (e) {}
+}
+
+function announceRoomChange(roomNumber) {
+  try {
+    var payload = { room: roomNumber, ts: Date.now() };
+    localStorage.setItem(LAST_CHANGE_KEY, JSON.stringify(payload));
+  } catch (e) {}
+}
+
+function loadRooms() {
+  try {
+    var raw = localStorage.getItem(ROOMS_KEY);
+    if (raw) {
+      var parsed = JSON.parse(raw);
+      if (Array.isArray(parsed)) {
+        // shallow replace contents while keeping reference
+        rooms.length = 0;
+        parsed.forEach(function(r){ rooms.push(r); });
+      }
+    } else {
+      // initialize storage with current rooms
+      saveRooms();
+    }
+  } catch (e) {}
+}
+
+function saveUsers() {
+  try { localStorage.setItem(USERS_KEY, JSON.stringify(users)); } catch (e) {}
+}
+
+function loadUsers() {
+  try {
+    var raw = localStorage.getItem(USERS_KEY);
+    if (raw) {
+      var parsed = JSON.parse(raw);
+      if (Array.isArray(parsed) && parsed.length) {
+        users = parsed.slice();
+        return;
+      }
+    }
+  } catch (e) {}
+  users = defaultUsers.slice();
+  saveUsers();
+}
+
+function saveCheckins() {
+  try { localStorage.setItem(CHECKINS_KEY, JSON.stringify(checkins)); } catch (e) {}
+}
+
+function loadCheckins() {
+  try {
+    var raw = localStorage.getItem(CHECKINS_KEY);
+    checkins = raw ? JSON.parse(raw) : checkins;
+  } catch (e) { /* keep in-memory */ }
+}
+
+// load persisted state if present
+loadRooms();
+loadCheckins();
+loadUsers();
+
+let currentUser = null;
+
+// Track check-ins (keeps simple in-memory log of occupancy events)
+// (checkins declared earlier)
+
+// Perform a best-effort cleanup of any lingering test data created by earlier debug helpers
+try { cleanupTestData(); } catch (e) { /* ignore */ }
+
+// Notifications & scheduled reminders
+let scheduledCheckins = [];
+
+// persistent notifications (per-user)
+let notifications = [];
+const NOTIFY_KEY = 'adbms_notifications_v1';
+
+function loadNotifications() {
+  try {
+    var raw = localStorage.getItem(NOTIFY_KEY);
+    notifications = raw ? JSON.parse(raw) : [];
+  } catch (e) { notifications = []; }
+}
+
+function saveNotifications() {
+  try { localStorage.setItem(NOTIFY_KEY, JSON.stringify(notifications)); } catch (e) {}
+}
+
+loadNotifications();
+
+function requestNotificationPermission() {
+  if (!('Notification' in window)) return Promise.resolve('unsupported');
+  return Notification.requestPermission();
+}
+
+function showToast(title, msg, opts) {
+  opts = opts || {};
+  var container = document.getElementById('toastContainer');
+  if (!container) return;
+  var toast = document.createElement('div');
+  toast.className = 'toast';
+  if (opts.id) toast.dataset.notifyId = opts.id;
+  toast.innerHTML = '<div><p class="title">' + (title||'') + '</p><p class="msg">' + (msg||'') + '</p></div>' +
+    '<div class="actions"><button class="btn dismiss">Dismiss</button></div>';
+  container.appendChild(toast);
+  var remove = function() {
+    toast.classList.add('fade-out');
+    setTimeout(function(){ container.removeChild(toast); }, 260);
+  };
+  toast.querySelector('.dismiss').addEventListener('click', function() {
+    var id = toast.dataset.notifyId;
+    if (id) {
+      var n = notifications.find(function(x){ return x.id === id; });
+      if (n) { n.read = true; saveNotifications(); }
+    }
+    remove();
+  });
+  setTimeout(remove, opts.timeout || 6000);
+}
+
+function notify(title, msg, opts) {
+  opts = opts || {};
+  var id = null;
+  if (opts.user) {
+    id = 'n_' + Date.now() + '_' + Math.floor(Math.random()*1000);
+    notifications.push({ id: id, user: opts.user, title: title, msg: msg, ts: Date.now(), read: false });
+    saveNotifications();
+  }
+
+  if ('Notification' in window && Notification.permission === 'granted') {
+    try {
+      var n = new Notification(title, { body: msg });
+      n.onclick = function() { window.focus(); };
+    } catch (e) {
+      // fall back to in-page toast
+    }
+  }
+
+  showToast(title, msg, Object.assign({}, opts, { id: id }));
+}
+
+function showPendingNotificationsForUser(user) {
+  try {
+    if (!user || !notifications || !Array.isArray(notifications)) return;
+    var pending = notifications.filter(function(n) { return n.user === user.username && !n.read; });
+    pending.forEach(function(n) {
+      // surface as in-page toast; mark as read
+      showToast(n.title || 'Notification', n.msg || '');
+      n.read = true;
+    });
+    if (pending.length) saveNotifications();
+  } catch (e) {
+    // non-fatal
+  }
+}
+
+function recordOccupancyChange(roomNumber, previousOccupiedBy, newOccupiedBy) {
+  if (previousOccupiedBy === newOccupiedBy) return;
+  if (!previousOccupiedBy && newOccupiedBy) {
+    // record date in YYYY-MM-DD for easy daily counting
+    var d = new Date();
+    var todayKey = d.toISOString().slice(0,10);
+    checkins.push({ room: roomNumber, user: newOccupiedBy, date: todayKey, ts: Date.now() });
+    // notify about the check-in and persist for the professor
+    var user = getUserByUsername(newOccupiedBy);
+    var display = user ? getDisplayName(user) : newOccupiedBy;
+    notify('Check-in', display + ' checked in to Room ' + roomNumber, { user: newOccupiedBy });
+    try { showLastActionNote(display + ' checked in to Room ' + roomNumber); } catch (e) {}
+    // persist checkins
+    saveCheckins();
+  } else if (previousOccupiedBy && !newOccupiedBy) {
+    // check-out event
+    var user = getUserByUsername(previousOccupiedBy);
+    var display = user ? getDisplayName(user) : previousOccupiedBy;
+    notify('Check-out', display + ' checked out from Room ' + roomNumber, { user: previousOccupiedBy });
+    try { showLastActionNote(display + ' checked out from Room ' + roomNumber); } catch (e) {}
+  }
+  // visual cue: flash the impacted row(s)
+  try { flashRow(roomNumber, newOccupiedBy ? 'in' : 'out'); } catch (e) {}
+}
+
+function flashRow(roomNumber, type) {
+  var selector = 'tr[data-room="' + roomNumber + '"]';
+  var rows = Array.from(document.querySelectorAll(selector));
+  rows.forEach(function(r){
+    r.classList.remove('row-flash');
+    // force reflow to restart animation
+    void r.offsetWidth;
+    r.classList.add('row-flash');
+  });
+  // remove after timeout to keep DOM clean
+  setTimeout(function(){ rows.forEach(function(r){ r.classList.remove('row-flash'); }); }, 1200);
+}
+
+// show a small last-action note in the global toolbar area
+function showLastActionNote(message) {
+  try {
+    var toolbar = document.querySelector('.global-toolbar');
+    if (!toolbar) toolbar = document.body;
+    var el = document.getElementById('lastActionNote');
+    if (!el) {
+      el = document.createElement('div');
+      el.id = 'lastActionNote';
+      el.className = 'last-action-note';
+      // insert before toolbar children so it appears left of buttons
+      toolbar.appendChild(el);
+    }
+    el.textContent = message;
+    el.classList.add('visible');
+    setTimeout(function(){ el.classList.remove('visible'); }, 4500);
+  } catch (e) {}
+}
+
+// Remove lingering test check-ins and temporary test user (if any)
+function cleanupTestData() {
+  var changed = false;
+  try {
+    // clear room test markers
+    rooms.forEach(function(r){
+      if (r && r._testFake) {
+        r.occupiedBy = null;
+        delete r._testFake;
+        changed = true;
+        try { announceRoomChange(r.room); } catch (e) {}
+      }
+    });
+
+    // remove transient test user
+    var tu = '__test_prof__';
+    var ui = users.findIndex(function(u){ return u.username === tu; });
+    if (ui !== -1) { users.splice(ui,1); changed = true; }
+
+    // remove any persisted checkins for the test user
+    if (Array.isArray(checkins)) {
+      var before = checkins.length;
+      checkins = checkins.filter(function(c){ return c.user !== '__test_prof__'; });
+      if (checkins.length !== before) changed = true;
+      try { saveCheckins(); } catch (e) {}
+    }
+
+    if (changed) {
+      try { saveRooms(); } catch (e) {}
+      try { syncAllDashboards(); } catch (e) {}
+    }
+  } catch (e) {
+    // ignore errors — cleanup best-effort
+  }
+}
+
+const loginScreen = document.getElementById("loginScreen");
+const adminDashboard = document.getElementById("adminDashboard");
+const professorDashboard = document.getElementById("professorDashboard");
+const studentDashboard = document.getElementById("studentDashboard");
+
+const loginForm = document.getElementById("loginForm");
+const loginUsername = document.getElementById("loginUsername");
+const loginPassword = document.getElementById("loginPassword");
+const loginError = document.getElementById("loginError");
+
+const adminWelcome = document.getElementById("adminWelcome");
+const professorWelcome = document.getElementById("professorWelcome");
+
+const adminRoomBody = document.getElementById("adminRoomBody");
+const adminAssignForm = document.getElementById("adminAssignForm");
+const adminProfessorSelect = document.getElementById("adminProfessorSelect");
+const adminRoomSelect = document.getElementById("adminRoomSelect");
+const adminFloorSelect = document.getElementById("adminFloorSelect");
+const adminStatusSelect = document.getElementById("adminStatusSelect");
+const adminAssignError = document.getElementById("adminAssignError");
+const profRoomBody = document.getElementById("profRoomBody");
+const profFloorSelect = document.getElementById("profFloorSelect");
+const usersBody = document.getElementById("usersBody");
+const studentRoomBody = document.getElementById("studentRoomBody");
+const studentNote = document.getElementById("studentNote");
+const studentFloorSelect = document.getElementById("studentFloorSelect");
+const studentSearch = document.getElementById("studentSearch");
+const studentHistoryBtn = document.getElementById("studentHistoryBtn");
+const studentHistoryModal = document.getElementById("studentHistoryModal");
+const studentHistoryClose = document.getElementById("studentHistoryClose");
+const lastUpdatedEl = document.getElementById("lastUpdated");
+
+const navItems = document.querySelectorAll("[data-admin-view]");
+const adminViews = {
+  dashboard: document.getElementById("adminViewDashboard"),
+  manage: document.getElementById("adminViewManage"),
+  reports: document.getElementById("adminViewReports"),
+  settings: document.getElementById("adminViewSettings"),
+};
+
+const addUserModal = document.getElementById("addUserModal");
+const openModalBtn = document.getElementById("openModalBtn");
+const closeModalBtn = document.getElementById("closeModalBtn");
+const cancelModalBtn = document.getElementById("cancelModalBtn");
+const userForm = document.getElementById("userForm");
+const userFormError = document.getElementById("userFormError");
+const passwordToggles = document.querySelectorAll("[data-toggle-password]");
+
+const editUserModal = document.getElementById("editUserModal");
+const editUserForm = document.getElementById("editUserForm");
+const editUserError = document.getElementById("editUserError");
+const editCloseBtn = document.getElementById("editCloseBtn");
+const editCancelBtn = document.getElementById("editCancelBtn");
+const editFullName = document.getElementById("editFullName");
+const editUsername = document.getElementById("editUsername");
+const editOriginalUsername = document.getElementById("editOriginalUsername");
+const editRoleSelect = document.getElementById("editRoleSelect");
+const editStatusSelect = document.getElementById("editStatusSelect");
+
+// Edit Room modal elements
+const editRoomModal = document.getElementById("editRoomModal");
+const editRoomForm = document.getElementById("editRoomForm");
+const editRoomStatusSelect = document.getElementById("editRoomStatusSelect");
+const editRoomNumber = document.getElementById("editRoomNumber");
+const editRoomCloseBtn = document.getElementById("editRoomCloseBtn");
+const editRoomCancelBtn = document.getElementById("editRoomCancelBtn");
+const editRoomError = document.getElementById("editRoomError");
+
+const adminLogoutBtn = document.getElementById("adminLogoutBtn");
+const profLogoutBtn = document.getElementById("profLogoutBtn");
+const studentLogoutBtn = document.getElementById("studentLogoutBtn");
+
+function getUserByUsername(username) {
+  if (!username) return null;
+  var key = String(username).toLowerCase();
+  return users.find(function(user) { return user && user.username && user.username.toLowerCase() === key; });
+}
+
+function getLastName(fullName) {
+  var parts = fullName.trim().split(/\s+/);
+  return parts.length ? parts[parts.length - 1] : fullName;
+}
+
+function getDisplayName(user) {
+  if (!user) return "";
+  if (user.role === "Professor") {
+    return "Prof. " + getLastName(user.name);
+  }
+  return user.name;
+}
+
+function formatToday() {
+  return new Date().toLocaleDateString("en-US", { month: "short", day: "numeric" });
+}
+
+function hideAllDashboards() {
+  adminDashboard.classList.add("hidden");
+  professorDashboard.classList.add("hidden");
+  studentDashboard.classList.add("hidden");
+}
+
+function showLogin() {
+  currentUser = null;
+  hideAllDashboards();
+  loginScreen.classList.remove("hidden");
+  loginForm.reset();
+  passwordToggles.forEach(function(toggle) {
+    var input = document.getElementById(toggle.dataset.togglePassword);
+    if (input) {
+      input.type = "password";
+    }
+    toggle.textContent = "\uD83D\uDC41";
+  });
+  loginError.classList.add("hidden");
+  closeUserModal();
+  closeEditUserModal();
+}
+
+function showDashboardForUser(user) {
+  hideAllDashboards();
+  loginScreen.classList.add("hidden");
+
+  if (user.role === "Admin") {
+    adminWelcome.textContent = "Welcome, " + getDisplayName(user) + "!";
+    adminDashboard.classList.remove("hidden");
+    switchAdminView("dashboard");
+    populateAdminFloorFilter();
+    populateAdminStatusFilter();
+    renderAdminRooms();
+    renderUsersTable();
+    // surface any pending notifications for this user
+    showPendingNotificationsForUser(user);
+    return;
+  }
+
+  if (user.role === "Professor") {
+    professorWelcome.textContent = "Welcome, " + getDisplayName(user) + "!";
+    professorDashboard.classList.remove("hidden");
+    populateProfessorFloorFilter();
+    renderProfessorRooms();
+    // show pending notifications for professor
+    showPendingNotificationsForUser(user);
+    return;
+  }
+
+  studentDashboard.classList.remove("hidden");
+  // populate student header info
+  try {
+    var studentInfo = document.getElementById('studentInfo');
+    if (studentInfo) {
+      var program = user.program || user.degree || 'N/A';
+      var block = user.block || user.section || 'N/A';
+      var nameEl = studentInfo.querySelector('.student-name');
+      var metaEl = studentInfo.querySelector('.student-meta');
+      if (nameEl) nameEl.textContent = user.name || 'Student';
+      if (metaEl) metaEl.textContent = block + ' • ' + program;
+    }
+  } catch (e) {}
+
+  renderStudentRooms();
+  showPendingNotificationsForUser(user);
+}
+
+function switchAdminView(view) {
+  Object.entries(adminViews).forEach(function(entry) {
+    var key = entry[0], element = entry[1];
+    element.classList.toggle("hidden", key !== view);
+  });
+  navItems.forEach(function(item) {
+    item.classList.toggle("active", item.dataset.adminView === view);
+  });
+}
+
+function getProfessorOptions() {
+  return users.filter(function(user) { return user.role === "Professor" && user.status === "Active"; });
+}
+
+function getAvailableRooms() {
+  return rooms.filter(function(room) { return !room.occupiedBy; });
+}
+
+function getRoomStatus(room) {
+  if (!room) return '-';
+  if (room.status === 'maintenance') return 'Maintenance';
+  if (room.status === 'reserved') return 'Reserved';
+  if (room.occupiedBy) return 'Occupied';
+  if (room.status === 'occupied') return 'Occupied';
+  return 'Available';
+}
+
+function getOccupantName(username) {
+  if (!username) return "";
+  var user = getUserByUsername(username);
+  return user ? getDisplayName(user) : "Unknown";
+}
+
+function getRoomSince(room) {
+  if (!room) return '-';
+  var rec = (checkins || []).slice().reverse().find(function(c){ return c.room === room.room; });
+  if (!rec) return '-';
+  try { return new Date(rec.ts).toLocaleString(); } catch (e) { return '-'; }
+}
+
+function getRoomSectionLabel(roomNumber) {
+  var floor = Math.floor(roomNumber / 100);
+  var firstRoom = floor * 100 + 1;
+  var lastRoom = floor * 100 + 9;
+  return "Floor " + floor + "00 (" + firstRoom + "-" + lastRoom + ")";
+}
+
+function buildSectionRows(columnCount, rowRenderer) {
+  var currentFloor = 0;
+  var rows = [];
+
+  rooms.forEach(function(room) {
+    var floor = Math.floor(room.room / 100);
+    if (floor !== currentFloor) {
+      currentFloor = floor;
+      rows.push('<tr class="section-row"><td colspan="' + columnCount + '">' + getRoomSectionLabel(room.room) + '</td></tr>');
+    }
+    rows.push(rowRenderer(room));
+  });
+
+  return rows.join("");
+}
+
+function buildSectionRowsFrom(roomArray, columnCount, rowRenderer) {
+  var currentFloor = 0;
+  var rows = [];
+  // sort by room number so sections render in order
+  var sorted = roomArray.slice().sort(function(a,b){ return a.room - b.room; });
+  sorted.forEach(function(room) {
+    var floor = Math.floor(room.room / 100);
+    if (floor !== currentFloor) {
+      currentFloor = floor;
+      rows.push('<tr class="section-row"><td colspan="' + columnCount + '">' + getRoomSectionLabel(room.room) + '</td></tr>');
+    }
+    rows.push(rowRenderer(room));
+  });
+  return rows.join("");
+}
+
+function populateProfessorFloorFilter() {
+  if (!profFloorSelect) return;
+  var floors = Array.from(new Set(rooms.map(function(r){ return Math.floor(r.room/100); }))).sort(function(a,b){ return a-b; });
+  profFloorSelect.innerHTML = '<option value="">All</option>' + floors.map(function(f){ return '<option value="' + f + '">Floor ' + f + '</option>'; }).join('');
+  profFloorSelect.addEventListener('change', function(){ renderProfessorRooms(); });
+}
+
+function renderUsersTable() {
+  usersBody.innerHTML = users.map(function(user) {
+    var rowClass = user.status === "Inactive" ? "inactive-user-row" : "";
+    var pillClass = user.status === "Active" ? "status-active" : "status-inactive";
+    var actionCell;
+    if (user.username === "admin") {
+      actionCell = '<span class="action-note">Primary admin</span>';
+    } else if (user.status === "Active") {
+      actionCell = '<div class="action-group">' +
+        '<button class="action-btn" data-user-action="edit" data-username="' + user.username + '">Edit</button>' +
+        '<button class="secondary" data-user-action="delete" data-username="' + user.username + '">Delete</button>' +
+        '<button class="danger-btn user-toggle-btn" data-user-action="deactivate" data-username="' + user.username + '">Deactivate</button>' +
+        '</div>';
+    } else {
+      actionCell = '<div class="action-group">' +
+        '<button class="action-btn" data-user-action="edit" data-username="' + user.username + '">Edit</button>' +
+        '<button class="secondary" data-user-action="delete" data-username="' + user.username + '">Delete</button>' +
+        '<button class="action-btn user-toggle-btn" data-user-action="reactivate" data-username="' + user.username + '">Reactivate</button>' +
+        '</div>';
+    }
+    return '<tr class="' + rowClass + '">' +
+      '<td>' + getDisplayName(user) + '</td>' +
+      '<td>' + user.username + '</td>' +
+      '<td>' + user.role + '</td>' +
+      '<td><span class="status-pill ' + pillClass + '">' + user.status + '</span></td>' +
+      '<td>' + (user.lastLogin || "-") + '</td>' +
+      '<td>' + actionCell + '</td>' +
+      '</tr>';
+  }).join("");
+}
+
+function renderAdminAssignmentOptions() {
+  var professors = getProfessorOptions();
+  var availableRooms = getAvailableRooms();
+  var submitButton = adminAssignForm.querySelector('button[type="submit"]');
+
+  adminProfessorSelect.innerHTML = professors.length
+    ? '<option value="">Select professor</option>' + professors.map(function(user) {
+        return '<option value="' + user.username + '">' + getDisplayName(user) + '</option>';
+      }).join("")
+    : '<option value="">No active professors available</option>';
+
+  adminRoomSelect.innerHTML = availableRooms.length
+    ? '<option value="">Select room</option>' + availableRooms.map(function(room) {
+        return '<option value="' + room.room + '">Room ' + room.room + '</option>';
+      }).join("")
+    : '<option value="">No available rooms</option>';
+
+  adminProfessorSelect.disabled = !professors.length;
+  adminRoomSelect.disabled = !availableRooms.length;
+  submitButton.disabled = !professors.length || !availableRooms.length;
+}
+
+function populateAdminFloorFilter() {
+  if (!adminFloorSelect) return;
+  var floors = Array.from(new Set(rooms.map(function(r){ return Math.floor(r.room/100); }))).sort(function(a,b){ return a-b; });
+  // clear existing options but keep 'All'
+  adminFloorSelect.innerHTML = '<option value="">All</option>' + floors.map(function(f){ return '<option value="' + f + '">Floor ' + f + '</option>'; }).join('');
+  adminFloorSelect.addEventListener('change', function(){ renderAdminRooms(); });
+}
+
+function populateAdminStatusFilter() {
+  if (!adminStatusSelect) return;
+  adminStatusSelect.innerHTML = [
+    { v: '', t: 'All' },
+    { v: 'available', t: 'Available' },
+    { v: 'occupied', t: 'Occupied' },
+    { v: 'reserved', t: 'Reserved / Scheduled' },
+    { v: 'maintenance', t: 'Maintenance / Out of Service' }
+  ].map(function(o){ return '<option value="' + o.v + '">' + o.t + '</option>'; }).join('');
+  adminStatusSelect.addEventListener('change', function(){ renderAdminRooms(); });
+}
+
+function releaseRoomsForUser(username) {
+  var changed = [];
+  rooms.forEach(function(room) {
+    if (room.occupiedBy === username) { room.occupiedBy = null; changed.push(room.room); }
+  });
+  // persist changes
+  saveRooms();
+  // announce each changed room so other tabs can highlight
+  changed.forEach(function(r){ announceRoomChange(r); });
+}
+
+function syncAllDashboards() {
+  renderAdminRooms();
+  renderUsersTable();
+  if (!professorDashboard.classList.contains("hidden") && currentUser && currentUser.role === "Professor") {
+    renderProfessorRooms();
+  }
+  if (!studentDashboard.classList.contains("hidden")) {
+    renderStudentRooms();
+  }
+}
+
+function renderAdminRooms() {
+  var selectedFloor = (adminFloorSelect && adminFloorSelect.value) ? Number(adminFloorSelect.value) : null;
+  var selectedStatus = (adminStatusSelect && adminStatusSelect.value) ? adminStatusSelect.value : '';
+  var roomsToRender = selectedFloor ? rooms.filter(function(r){ return Math.floor(r.room/100) === selectedFloor; }) : rooms.slice();
+
+  // apply status filter
+  if (selectedStatus) {
+    var now = Date.now();
+    if (selectedStatus === 'available') {
+      roomsToRender = roomsToRender.filter(function(r){
+        return !r.occupiedBy && r.status !== 'occupied' && r.status !== 'reserved' && r.status !== 'maintenance';
+      });
+    } else if (selectedStatus === 'occupied') {
+      roomsToRender = roomsToRender.filter(function(r){ return !!r.occupiedBy || r.status === 'occupied'; });
+    } else if (selectedStatus === 'reserved') {
+      roomsToRender = roomsToRender.filter(function(r){
+        var reservedBySchedule = scheduledCheckins.some(function(s){
+          try { var t = (typeof s.whenTs === 'number') ? s.whenTs : new Date(s.whenTs).getTime(); return s.room === r.room && t > now; } catch (e) { return false; }
+        });
+        return r.status === 'reserved' || reservedBySchedule;
+      });
+    } else if (selectedStatus === 'maintenance') {
+      roomsToRender = roomsToRender.filter(function(r){ return r.status === 'maintenance'; });
+    }
+  }
+
+  adminRoomBody.innerHTML = buildSectionRowsFrom(roomsToRender, 4, function(room) {
+    var isOccupied = Boolean(room.occupiedBy) || room.status === 'occupied';
+    var editBtn = '<button class="action-btn" data-admin-action="edit" data-room="' + room.room + '">Edit</button>';
+    var actionBtn = isOccupied
+      ? '<button class="danger-btn" data-admin-action="release" data-room="' + room.room + '">Force Release</button>'
+      : '<span class="action-note">Assign from dropdown</span>';
+    // status class and icon mapping
+    var statusClass = room.status === 'maintenance' ? 'status-inactive' : (room.status === 'reserved' ? 'status-info' : (isOccupied ? 'status-occupied' : 'status-available'));
+    var icon = room.status === 'maintenance' ? '🛠' : (room.status === 'reserved' ? '📅' : (isOccupied ? '👤' : '✔️'));
+    var statusText = getRoomStatus(room);
+    return '<tr data-room="' + room.room + '" class="' + (isOccupied ? "occupied-row" : "") + '">' +
+      '<td>' + room.room + '</td>' +
+      '<td>' + ('<span class="status-pill ' + statusClass + '" aria-label="' + statusText + '">' + icon + ' ' + statusText + '</span>') + '</td>' +
+      '<td>' + getOccupantName(room.occupiedBy) + '</td>' +
+      '<td>' + (isOccupied ? getRoomSince(room) : '-') + '</td>' +
+      '<td>' + actionBtn + ' ' + editBtn + '</td>' +
+      '</tr>';
+  });
+  renderAdminAssignmentOptions();
+  renderAdminStats();
+}
+
+function renderProfessorRooms() {
+  var selectedFloor = (profFloorSelect && profFloorSelect.value) ? Number(profFloorSelect.value) : null;
+  var roomsToRender = selectedFloor ? rooms.filter(function(r){ return Math.floor(r.room/100) === selectedFloor; }) : rooms;
+
+  profRoomBody.innerHTML = buildSectionRowsFrom(roomsToRender, 4, function(room) {
+    var occupiedByCurrentUser = room.occupiedBy === (currentUser && currentUser.username);
+    var occupiedByOther = room.occupiedBy && !occupiedByCurrentUser;
+    var badge = occupiedByCurrentUser ? '<span class="badge">Occupied (You)</span>' : "";
+    // determine status and classes
+    var isOccupied = Boolean(room.occupiedBy) || room.status === 'occupied';
+    var statusClass = room.status === 'maintenance' ? 'status-inactive' : (room.status === 'reserved' ? 'status-info' : (isOccupied ? 'status-occupied' : 'status-available'));
+    var icon = room.status === 'maintenance' ? '🛠' : (room.status === 'reserved' ? '📅' : (isOccupied ? '👤' : '✔️'));
+    var statusText = getRoomStatus(room);
+    if (occupiedByCurrentUser) statusText = statusText + ' (You)';
+    else if (room.occupiedBy) statusText = statusText + ' (' + getOccupantName(room.occupiedBy) + ')';
+
+    var actionCell;
+    if (occupiedByCurrentUser) {
+      actionCell = '<button class="danger-btn" data-prof-action="checkout" data-room="' + room.room + '" aria-label="Check out from room ' + room.room + '">Check Out</button>';
+    } else if (occupiedByOther) {
+      actionCell = "";
+    } else {
+      // only allow check-in when the room is available (status undefined or 'available')
+      var isAvailable = (!room.status || room.status === 'available') && !room.occupiedBy;
+      if (isAvailable) {
+        actionCell = '<button class="action-btn" data-prof-action="checkin" data-room="' + room.room + '" aria-label="Check in to room ' + room.room + '">Check In</button>';
+      } else {
+        actionCell = '<button class="action-btn" disabled title="Room not available">Check In</button>';
+      }
+    }
+
+    return '<tr data-room="' + room.room + '" class="' + (occupiedByCurrentUser ? "occupied-row" : "") + '">' +
+      '<td><strong>Room ' + room.room + '</strong>' + badge + '</td>' +
+      '<td>' + ('<span class="status-pill ' + statusClass + '" aria-label="' + statusText + '">' + icon + ' ' + statusText + '</span>') + '</td>' +
+      '<td>' + (room.occupiedBy ? getRoomSince(room) : '-') + '</td>' +
+      '<td>' + actionCell + '</td>' +
+      '</tr>';
+  });
+  // update professor-specific stats
+  renderProfessorStats();
+}
+
+function renderAdminStats() {
+  var available = getAvailableRooms().length;
+  var occupied = rooms.length - available;
+  var availEl = document.getElementById('roomsAvailableCount');
+  var occEl = document.getElementById('roomsOccupiedCount');
+  if (availEl) availEl.textContent = String(available);
+  if (occEl) occEl.textContent = String(occupied);
+  // total and utilization
+  var total = rooms.length;
+  var util = total ? (occupied / total * 100) : 0;
+  var utilEl = document.getElementById('utilizationPercent');
+  if (utilEl) utilEl.textContent = util.toFixed(1) + "%";
+  // today's check-ins (count checkins with today's date)
+  var todayKey = new Date().toISOString().slice(0,10);
+  var todays = checkins.filter(function(c) { return c.date === todayKey; }).length;
+  var todayEl = document.getElementById('todaysCheckinsCount');
+  if (todayEl) todayEl.textContent = String(todays);
+}
+
+function renderProfessorStats() {
+  if (!currentUser) return;
+  var myRooms = rooms.filter(function(r) { return r.occupiedBy === currentUser.username; });
+  var assignedEl = document.getElementById('profAssignedRoom');
+  var utilEl = document.getElementById('profUtilizationPercent');
+  // Assigned / Checked In: show the room number if occupied, otherwise '-'
+  if (assignedEl) {
+    if (myRooms.length > 0) {
+      assignedEl.textContent = 'Room ' + myRooms[0].room;
+    } else {
+      assignedEl.textContent = '-';
+    }
+  }
+  // Utilization: (myAssigned / total) * 100
+  var total = rooms.length;
+  var myAssigned = myRooms.length;
+  var util = total ? (myAssigned / total * 100) : 0;
+  if (utilEl) utilEl.textContent = util.toFixed(1) + '%';
+}
+
+function getFilteredStudentRooms() {
+  var floorVal = (studentFloorSelect && studentFloorSelect.value) ? Number(studentFloorSelect.value) : null;
+  var q = (studentSearch && studentSearch.value) ? studentSearch.value.trim().toLowerCase() : '';
+  var filtered = rooms.slice();
+  if (floorVal) filtered = filtered.filter(function(r){ return Math.floor(r.room/100) === floorVal; });
+  if (q) {
+    filtered = filtered.filter(function(r){
+      var roomMatches = String(r.room).indexOf(q) !== -1;
+      var profMatches = r.occupiedBy && getOccupantName(r.occupiedBy).toLowerCase().indexOf(q) !== -1;
+      return roomMatches || profMatches;
+    });
+  }
+  return filtered;
+}
+
+function populateStudentFloorFilter() {
+  if (!studentFloorSelect) return;
+  var floors = Array.from(new Set(rooms.map(function(r){ return Math.floor(r.room/100); }))).sort(function(a,b){ return a-b; });
+  studentFloorSelect.innerHTML = '<option value="">All</option>' + floors.map(function(f){ return '<option value="' + f + '">Floor ' + f + '</option>'; }).join('');
+  studentFloorSelect.addEventListener('change', renderStudentRooms);
+}
+
+function renderStudentHistory() {
+  if (!studentHistoryModal) return;
+  var body = studentHistoryModal.querySelector('.modal-body');
+  var items = (checkins || []).slice().sort(function(a,b){ return b.ts - a.ts; }).slice(0,20);
+  body.innerHTML = items.length ? items.map(function(c){
+    var name = getOccupantName(c.user) || c.user;
+    var time = new Date(c.ts).toLocaleString();
+    return '<div style="padding:8px 0;border-bottom:1px solid #e6e9ef;">Room ' + c.room + ' — ' + name + ' <span style="color:#6a7180;margin-left:8px;font-weight:600;">' + time + '</span></div>';
+  }).join('') : '<div style="padding:8px;">No recent activity.</div>';
+  studentHistoryModal.classList.remove('hidden');
+  studentHistoryModal.setAttribute('aria-hidden','false');
+}
+
+function renderStudentRooms() {
+  var rows = buildSectionRowsFrom(getFilteredStudentRooms(), 5, function(room) {
+    var isOccupied = Boolean(room.occupiedBy) || room.status === 'occupied';
+    var statusClass = room.status === 'maintenance' ? 'status-inactive' : (room.status === 'reserved' ? 'status-info' : (isOccupied ? 'status-occupied' : 'status-available'));
+    var icon = room.status === 'maintenance' ? '🛠' : (room.status === 'reserved' ? '📅' : (isOccupied ? '👤' : '✔️'));
+    var profText = room.occupiedBy ? getOccupantName(room.occupiedBy) : '-';
+    return '<tr data-room="' + room.room + '" class="' + (isOccupied ? "occupied-row" : "") + '">' +
+      '<td style="width:48px;text-align:center;">' + icon + '</td>' +
+      '<td><strong>Room ' + room.room + '</strong></td>' +
+      '<td>' + ('<span class="status-pill ' + statusClass + '" aria-label="' + getRoomStatus(room) + '">' + icon + ' ' + getRoomStatus(room) + '</span>') + '</td>' +
+      '<td>' + (isOccupied ? getRoomSince(room) : '-') + '</td>' +
+      '<td>' + profText + '</td>' +
+      '</tr>';
+  });
+  studentRoomBody.innerHTML = rows;
+  var occupiedRooms = rooms.filter(function(room) { return room.occupiedBy; });
+  studentNote.textContent = occupiedRooms.length
+    ? '\uD83D\uDCCD ' + occupiedRooms.length + ' occupied rooms — assigned professor shown above.'
+    : '\uD83D\uDCCD All rooms are currently available.';
+  if (lastUpdatedEl) lastUpdatedEl.textContent = 'Last updated: ' + new Date().toLocaleTimeString();
+}
+
+function rerenderVisibleDashboard() {
+  if (!currentUser) return;
+  if (currentUser.role === "Admin") { renderAdminRooms(); renderUsersTable(); }
+  if (currentUser.role === "Professor") renderProfessorRooms();
+  if (currentUser.role === "Student") renderStudentRooms();
+}
+
+function closeUserModal() {
+  addUserModal.classList.add("hidden");
+  userFormError.textContent = "";
+  userFormError.classList.add("hidden");
+}
+
+function closeEditUserModal() {
+  editUserModal.classList.add("hidden");
+  editUserError.textContent = "";
+  editUserError.classList.add("hidden");
+  editUserForm.reset();
+  editUserModal.setAttribute("aria-hidden", "true");
+}
+
+function openEditUserModal(user) {
+  if (!user || user.username === "admin") return;
+  editFullName.value = user.name || "";
+  editUsername.value = user.username || "";
+  editOriginalUsername.value = user.username || "";
+  editRoleSelect.value = user.role || "Student";
+  editStatusSelect.value = user.status || "Active";
+  editUserError.textContent = "";
+  editUserError.classList.add("hidden");
+  editUserModal.classList.remove("hidden");
+  editUserModal.setAttribute("aria-hidden", "false");
+}
+
+// Room edit modal helpers
+function openEditRoomModal(roomNumber) {
+  var room = rooms.find(function(r){ return r.room === Number(roomNumber); });
+  if (!room) return;
+  editRoomNumber.value = String(room.room);
+  if (room.status === 'maintenance') editRoomStatusSelect.value = 'maintenance';
+  else if (room.status === 'reserved') editRoomStatusSelect.value = 'reserved';
+  else editRoomStatusSelect.value = 'available';
+  editRoomError.textContent = '';
+  editRoomError.classList.add('hidden');
+  editRoomModal.classList.remove('hidden');
+  editRoomModal.setAttribute('aria-hidden','false');
+}
+
+function closeEditRoomModal() {
+  if (!editRoomModal) return;
+  editRoomModal.classList.add('hidden');
+  editRoomError.textContent = '';
+  editRoomError.classList.add('hidden');
+  try { editRoomForm.reset(); } catch(e){}
+  editRoomModal.setAttribute('aria-hidden','true');
+}
+
+function normalizeUsername(value) {
+  return String(value || "").trim().toLowerCase();
+}
+
+function updateUserReferences(oldUsername, newUsername) {
+  if (!oldUsername || !newUsername || oldUsername === newUsername) return;
+  rooms.forEach(function(room) {
+    if (room.occupiedBy === oldUsername) room.occupiedBy = newUsername;
+  });
+  if (Array.isArray(checkins)) {
+    checkins.forEach(function(entry) {
+      if (entry && entry.user === oldUsername) entry.user = newUsername;
+    });
+  }
+  if (Array.isArray(notifications)) {
+    notifications.forEach(function(note) {
+      if (note && note.user === oldUsername) note.user = newUsername;
+    });
+  }
+}
+
+function openUserModal() {
+  addUserModal.classList.remove("hidden");
+  userFormError.textContent = "";
+  userFormError.classList.add("hidden");
+}
+
+loginForm.addEventListener("submit", function(event) {
+  event.preventDefault();
+  // ensure we have the latest persisted users (handles other tabs/imports)
+  try { loadUsers(); } catch (e) { /* ignore */ }
+  var username = loginUsername.value.trim();
+  var password = loginPassword.value;
+  // diagnostic log for debugging login issues
+  try { console.debug('Attempting login for', username, 'known users:', users.map(function(u){ return u.username; })); } catch (e) {}
+  var user = users.find(function(c) {
+    return c.username.toLowerCase() === username.toLowerCase() && c.password === password;
+  });
+  if (!user) {
+    loginError.textContent = "Invalid username or password.";
+    loginError.classList.remove("hidden");
+    try { console.debug('Login failed for', username); } catch (e) {}
+    return;
+  }
+  if (user.status !== "Active") {
+    loginError.textContent = "This account is inactive. Contact the admin.";
+    loginError.classList.remove("hidden");
+    return;
+  }
+  loginError.classList.add("hidden");
+  loginError.textContent = "Invalid username or password.";
+  currentUser = user;
+  currentUser.lastLogin = formatToday();
+  saveUsers();
+  showDashboardForUser(user);
+});
+
+navItems.forEach(function(item) {
+  item.addEventListener("click", function() {
+    switchAdminView(item.dataset.adminView);
+  });
+});
+
+openModalBtn.addEventListener("click", openUserModal);
+closeModalBtn.addEventListener("click", closeUserModal);
+cancelModalBtn.addEventListener("click", closeUserModal);
+editCloseBtn.addEventListener("click", closeEditUserModal);
+editCancelBtn.addEventListener("click", closeEditUserModal);
+
+adminAssignForm.addEventListener("submit", function(event) {
+  event.preventDefault();
+  var professorUsername = adminProfessorSelect.value;
+  var roomNumber = Number(adminRoomSelect.value);
+  var selectedProfessor = getUserByUsername(professorUsername);
+  var selectedRoom = rooms.find(function(room) { return room.room === roomNumber; });
+
+  adminAssignError.textContent = "";
+  adminAssignError.classList.add("hidden");
+
+  if (!selectedProfessor || selectedProfessor.role !== "Professor" || selectedProfessor.status !== "Active") {
+    adminAssignError.textContent = "Select an active professor first.";
+    adminAssignError.classList.remove("hidden");
+    return;
+  }
+
+  if (!selectedRoom) {
+    adminAssignError.textContent = "Select an available room first.";
+    adminAssignError.classList.remove("hidden");
+    return;
+  }
+
+  if (selectedRoom.occupiedBy) {
+    adminAssignError.textContent = "That room is already occupied. Choose another room.";
+    adminAssignError.classList.remove("hidden");
+    renderAdminRooms();
+    return;
+  }
+
+  releaseRoomsForUser(selectedProfessor.username);
+  var prev = selectedRoom.occupiedBy;
+  selectedRoom.occupiedBy = selectedProfessor.username;
+  recordOccupancyChange(selectedRoom.room, prev, selectedRoom.occupiedBy);
+  adminAssignForm.reset();
+  // persist rooms state after assignment
+  saveRooms();
+  saveCheckins();
+  announceRoomChange(selectedRoom.room);
+  syncAllDashboards();
+});
+
+// Edit room modal event handlers
+if (editRoomCloseBtn) editRoomCloseBtn.addEventListener('click', closeEditRoomModal);
+if (editRoomCancelBtn) editRoomCancelBtn.addEventListener('click', closeEditRoomModal);
+if (editRoomForm) {
+  editRoomForm.addEventListener('submit', function(e){
+    e.preventDefault();
+    var rn = Number(editRoomNumber.value);
+    var room = rooms.find(function(r){ return r.room === rn; });
+    if (!room) { closeEditRoomModal(); return; }
+    var prevOcc = room.occupiedBy;
+    var sel = (String(editRoomStatusSelect.value || '')).toLowerCase();
+    if (sel === 'available') {
+      room.status = 'available';
+      if (room.occupiedBy) { recordOccupancyChange(rn, prevOcc, null); }
+      room.occupiedBy = null;
+    } else if (sel === 'occupied') {
+      room.status = 'occupied';
+      // keep occupiedBy unchanged (admin may set occupied state without assigning occupant)
+    } else if (sel === 'reserved') {
+      room.status = 'reserved';
+      if (room.occupiedBy) { recordOccupancyChange(rn, prevOcc, null); }
+      room.occupiedBy = null;
+    } else if (sel === 'maintenance') {
+      room.status = 'maintenance';
+      if (room.occupiedBy) { recordOccupancyChange(rn, prevOcc, null); }
+      room.occupiedBy = null;
+    }
+    try { saveRooms(); saveCheckins(); } catch(e){}
+    announceRoomChange(rn);
+    closeEditRoomModal();
+    syncAllDashboards();
+    notify('Room updated', 'Room ' + rn + ' status set to ' + sel);
+  });
+}
+
+passwordToggles.forEach(function(toggle) {
+  toggle.addEventListener("click", function() {
+    var input = document.getElementById(toggle.dataset.togglePassword);
+    if (!input) return;
+    var isVisible = input.type === "text";
+    input.type = isVisible ? "password" : "text";
+    toggle.textContent = isVisible ? "\uD83D\uDC41" : "\uD83D\uDE48";
+  });
+});
+
+userForm.addEventListener("submit", function(event) {
+  event.preventDefault();
+  var fullName = document.getElementById("fullName").value.trim();
+  var username = document.getElementById("username").value.trim();
+  var password = document.getElementById("password").value;
+  var confirmPassword = document.getElementById("confirmPassword").value;
+  var role = document.getElementById("roleSelect").value;
+
+  userFormError.textContent = "";
+  userFormError.classList.add("hidden");
+
+  if (!fullName || !username || !password || !confirmPassword || !role) return;
+
+  // Validate full name: only letters (including common accented chars) and spaces
+  try {
+    var nameRegex = /^[\p{L} ]+$/u;
+    if (!nameRegex.test(fullName)) {
+      userFormError.textContent = "Full name may only contain letters and spaces.";
+      userFormError.classList.remove("hidden");
+      return;
+    }
+  } catch (e) {
+    // Fallback for environments without Unicode property escapes
+    var fallbackNameRegex = /^[A-Za-z \u00C0-\u017F]+$/;
+    if (!fallbackNameRegex.test(fullName)) {
+      userFormError.textContent = "Full name may only contain letters and spaces.";
+      userFormError.classList.remove("hidden");
+      return;
+    }
+  }
+
+  if (password !== confirmPassword) {
+    userFormError.textContent = "Passwords do not match.";
+    userFormError.classList.remove("hidden");
+    return;
+  }
+
+  if (getUserByUsername(username)) {
+    userFormError.textContent = "Username already exists. Use a different username.";
+    userFormError.classList.remove("hidden");
+    return;
+  }
+  // normalize username storage to lowercase to avoid case-sensitivity issues
+  var normalizedUsername = username.toLowerCase();
+  users.push({ name: fullName, username: normalizedUsername, password: password, role: role, status: "Active", lastLogin: "-" });
+  // persist users immediately so login in other tabs or after reload works
+  saveUsers();
+  saveUsers();
+  userForm.reset();
+  passwordToggles.forEach(function(toggle) { toggle.textContent = "\uD83D\uDC41"; });
+  closeUserModal();
+  rerenderVisibleDashboard();
+  if (currentUser && currentUser.role === "Admin") {
+    renderAdminAssignmentOptions();
+  }
+});
+
+editUserForm.addEventListener("submit", function(event) {
+  event.preventDefault();
+  var fullName = editFullName.value.trim();
+  var username = editUsername.value.trim();
+  var role = editRoleSelect.value;
+  var status = editStatusSelect.value;
+  var originalUsername = editOriginalUsername.value;
+
+  editUserError.textContent = "";
+  editUserError.classList.add("hidden");
+
+  if (!fullName || !username || !role || !status) return;
+
+  // Validate full name: only letters and spaces
+  try {
+    var nameRegex = /^[\p{L} ]+$/u;
+    if (!nameRegex.test(fullName)) {
+      editUserError.textContent = "Full name may only contain letters and spaces.";
+      editUserError.classList.remove("hidden");
+      return;
+    }
+  } catch (e) {
+    var fallbackNameRegex = /^[A-Za-z \u00C0-\u017F]+$/;
+    if (!fallbackNameRegex.test(fullName)) {
+      editUserError.textContent = "Full name may only contain letters and spaces.";
+      editUserError.classList.remove("hidden");
+      return;
+    }
+  }
+
+  var normalizedUsername = normalizeUsername(username);
+  var user = getUserByUsername(originalUsername);
+  if (!user || user.username === "admin") return;
+
+  if (normalizedUsername !== normalizeUsername(originalUsername) && getUserByUsername(normalizedUsername)) {
+    editUserError.textContent = "Username already exists. Use a different username.";
+    editUserError.classList.remove("hidden");
+    return;
+  }
+
+  var prevUsername = user.username;
+  var prevRole = user.role;
+
+  user.name = fullName;
+  user.username = normalizedUsername;
+  user.role = role;
+  user.status = status;
+
+  if (prevUsername !== normalizedUsername) {
+    updateUserReferences(prevUsername, normalizedUsername);
+  }
+
+  if ((prevRole === "Professor" && role !== "Professor") || status !== "Active") {
+    releaseRoomsForUser(user.username);
+  }
+
+  saveUsers();
+  saveRooms();
+  saveCheckins();
+  saveNotifications();
+  closeEditUserModal();
+  syncAllDashboards();
+});
+
+adminRoomBody.addEventListener("click", function(event) {
+  var target = event.target;
+  if (!(target instanceof HTMLButtonElement)) return;
+  var roomNumber = Number(target.dataset.room);
+  var action = target.dataset.adminAction;
+  var room = rooms.find(function(item) { return item.room === roomNumber; });
+  if (!room) return;
+  if (action === "edit") {
+    openEditRoomModal(roomNumber);
+    return;
+  }
+  if (action === "release") {
+    var prev = room.occupiedBy;
+    room.occupiedBy = null;
+    // persist rooms after forced release
+    saveRooms();
+    // notify about forced release and persist for the previous occupant (if known)
+    var occupant = prev ? getUserByUsername(prev) : null;
+    var name = occupant ? getDisplayName(occupant) : (prev || 'Unknown');
+    if (prev) notify('Forced release', 'Room ' + roomNumber + ' was released (was: ' + name + ')', { user: prev });
+    else notify('Forced release', 'Room ' + roomNumber + ' was released (was: ' + name + ')');
+    // also persist checkins (no-op here but keep consistent)
+    saveCheckins();
+    announceRoomChange(roomNumber);
+  }
+  syncAllDashboards();
+});
+
+profRoomBody.addEventListener("click", function(event) {
+  var target = event.target;
+  if (!(target instanceof HTMLButtonElement)) return;
+  var roomNumber = Number(target.dataset.room);
+  var action = target.dataset.profAction;
+  var selectedRoom = rooms.find(function(item) { return item.room === roomNumber; });
+  if (!selectedRoom) return;
+  if (action === "checkout" && selectedRoom.occupiedBy === currentUser.username) {
+    if (!confirm('Check out from Room ' + roomNumber + '?')) return;
+    selectedRoom.occupiedBy = null;
+    saveRooms();
+    announceRoomChange(roomNumber);
+  }
+  if (action === "checkin" && !selectedRoom.occupiedBy) {
+    // Prevent checking in to a new room while already checked in elsewhere
+    var currentlyChecked = rooms.find(function(r){ return r.occupiedBy === currentUser.username; });
+    if (currentlyChecked && currentlyChecked.room !== roomNumber) {
+      notify('Action required', 'Please check out of Room ' + currentlyChecked.room + ' before checking into Room ' + roomNumber);
+    } else {
+      var prev = selectedRoom.occupiedBy;
+      selectedRoom.occupiedBy = currentUser.username;
+      recordOccupancyChange(selectedRoom.room, prev, selectedRoom.occupiedBy);
+      saveRooms();
+      saveCheckins();
+      announceRoomChange(roomNumber);
+    }
+  }
+  renderProfessorRooms();
+  if (!adminDashboard.classList.contains("hidden")) renderAdminRooms();
+  if (!studentDashboard.classList.contains("hidden")) renderStudentRooms();
+});
+
+usersBody.addEventListener("click", function(event) {
+  var target = event.target;
+  if (!(target instanceof HTMLButtonElement)) return;
+  var username = target.dataset.username;
+  var action = target.dataset.userAction;
+  var user = getUserByUsername(username);
+  if (!user || user.username === "admin") return;
+  if (action === "edit") {
+    openEditUserModal(user);
+    return;
+  }
+  if (action === "delete") {
+    if (!confirm('Delete user "' + user.username + '"? This cannot be undone.')) return;
+    releaseRoomsForUser(user.username);
+    users = users.filter(function(u){ return u.username !== user.username; });
+    if (Array.isArray(checkins)) {
+      checkins = checkins.filter(function(c){ return c.user !== user.username; });
+    }
+    if (Array.isArray(notifications)) {
+      notifications = notifications.filter(function(n){ return n.user !== user.username; });
+    }
+    saveUsers();
+    saveRooms();
+    saveCheckins();
+    saveNotifications();
+    syncAllDashboards();
+    return;
+  }
+  if (action === "deactivate") {
+    user.status = "Inactive";
+    releaseRoomsForUser(user.username);
+  }
+  if (action === "reactivate") user.status = "Active";
+  saveUsers();
+  syncAllDashboards();
+});
+
+adminLogoutBtn.addEventListener("click", function(){ if (confirm('Confirm log out?')) showLogin(); });
+profLogoutBtn.addEventListener("click", function(){ if (confirm('Confirm log out?')) showLogin(); });
+studentLogoutBtn.addEventListener("click", function(){ if (confirm('Confirm log out?')) showLogin(); });
+
+// Student view helpers: wire filters, search and history (read-only)
+if (studentSearch) studentSearch.addEventListener('input', function(){ renderStudentRooms(); });
+if (studentHistoryBtn) studentHistoryBtn.addEventListener('click', function(){ renderStudentHistory(); });
+if (studentHistoryClose) studentHistoryClose.addEventListener('click', function(){ if (studentHistoryModal) { studentHistoryModal.classList.add('hidden'); studentHistoryModal.setAttribute('aria-hidden','true'); } });
+populateStudentFloorFilter();
+// Import / Export demo data (localStorage)
+const importFile = document.getElementById('importFile');
+const exportDataBtn = document.getElementById('exportDataBtn');
+const importDataBtn = document.getElementById('importDataBtn');
+const loadSampleBtn = document.getElementById('loadSampleBtn');
+
+function exportData() {
+  var payload = { users: users, rooms: rooms, checkins: checkins };
+  var blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
+  var url = URL.createObjectURL(blob);
+  var a = document.createElement('a');
+  a.href = url; a.download = 'adbms-demo.json'; document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url);
+}
+
+function importDataFile(file) {
+  if (!file) return;
+  var reader = new FileReader();
+  reader.onload = function(e) {
+    try {
+      var parsed = JSON.parse(e.target.result);
+      if (parsed.rooms) {
+        try { localStorage.setItem(ROOMS_KEY, JSON.stringify(parsed.rooms)); } catch(e) {}
+      }
+      if (parsed.checkins) {
+        try { localStorage.setItem(CHECKINS_KEY, JSON.stringify(parsed.checkins)); } catch(e) {}
+      }
+      if (parsed.users) {
+        try { users = parsed.users.slice(); saveUsers(); } catch(e) {}
+      }
+      loadRooms(); loadCheckins(); rerenderVisibleDashboard(); notify('Import', 'Demo data imported');
+    } catch (err) { notify('Import error', 'Invalid file'); }
+  };
+  reader.readAsText(file);
+}
+
+if (exportDataBtn) exportDataBtn.addEventListener('click', exportData);
+if (importDataBtn) importDataBtn.addEventListener('click', function(){ if (importFile) importFile.click(); });
+if (importFile) importFile.addEventListener('change', function(e){ importDataFile(e.target.files[0]); importFile.value = ''; });
+if (loadSampleBtn) loadSampleBtn.addEventListener('click', function(){ saveRooms(); saveCheckins(); loadRooms(); loadCheckins(); rerenderVisibleDashboard(); notify('Sample', 'Sample data loaded'); });
+
+// listen for storage changes from other tabs and sync state
+window.addEventListener('storage', function(e) {
+  if (!e.key) return;
+  if (e.key === ROOMS_KEY) {
+    loadRooms();
+    rerenderVisibleDashboard();
+  }
+  if (e.key === CHECKINS_KEY) {
+    loadCheckins();
+    renderAdminStats();
+  }
+  if (e.key === NOTIFY_KEY) {
+    loadNotifications();
+    // surface new notifications for current user if any
+    if (currentUser) showPendingNotificationsForUser(currentUser);
+  }
+  // also handle last-change marker to highlight row
+  if (e.key === LAST_CHANGE_KEY) {
+    try {
+      var payload = e.newValue ? JSON.parse(e.newValue) : null;
+      if (payload && payload.room) highlightRoomRow(payload.room);
+    } catch (err) {}
+  }
+});
+
+function highlightRoomRow(roomNumber) {
+  var textA = 'Room ' + roomNumber;
+  var found = [];
+  // search admin table (first cell contains number)
+  [adminRoomBody, profRoomBody, studentRoomBody].forEach(function(body) {
+    if (!body) return;
+    var tds = body.querySelectorAll('td');
+    tds.forEach(function(td) {
+      var t = td.textContent.trim();
+      if (t === String(roomNumber) || t.indexOf(textA) !== -1) {
+        var row = td.closest('tr');
+        if (row && !found.includes(row)) {
+          found.push(row);
+          row.classList.add('flash-highlight');
+          setTimeout(function(){ row.classList.remove('flash-highlight'); }, 1400);
+        }
+      }
+    });
+  });
+}
+
+showLogin();
+    </script>
+  </body>
+</html>
