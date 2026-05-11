@@ -1,0 +1,17 @@
+# Ignore the cloned nested repository folder (keep it locally, don't commit)
+ADBMS-Room-Availability-System/
+
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+
+# VS Code
+.vscode/
+
+# OS files
+Thumbs.db
+desktop.ini
+
+# Logs
+*.log
