@@ -1,5 +1,5 @@
-# Ignore the cloned nested repository folder (keep it locally, don't commit)
-ADBMS-Room-Availability-System/
+# (Previously ignored) — allow adding nested folder back if needed
+#ADBMS-Room-Availability-System/
 
 # Python
 __pycache__/
