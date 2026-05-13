@@ -1,0 +1,131 @@
+<?php
+declare(strict_types=1);
+
+require_once __DIR__ . '/db.php';
+
+header('Content-Type: application/json; charset=utf-8');
+header('Cache-Control: no-store, no-cache, must-revalidate, max-age=0');
+header('Pragma: no-cache');
+
+function adbms_respond(array $payload, int $statusCode = 200): void
+{
+    http_response_code($statusCode);
+    echo json_encode($payload, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
+    exit;
+}
+
+try {
+    $pdo = adbms_connect();
+    $entity = strtolower(trim((string) ($_GET['entity'] ?? 'bootstrap')));
+    $action = strtolower(trim((string) ($_GET['action'] ?? 'list')));
+    $method = strtoupper($_SERVER['REQUEST_METHOD'] ?? 'GET');
+
+    if ($entity === 'bootstrap') {
+        adbms_respond([
+            'success' => true,
+            'data' => adbms_bootstrap_state($pdo),
+        ]);
+    }
+
+    if ($entity === 'auth' && $action === 'login') {
+        if ($method !== 'POST') {
+            adbms_respond(['success' => false, 'error' => 'Login requires POST.'], 405);
+        }
+
+        $input = adbms_json_input();
+        $username = trim((string) ($input['username'] ?? ''));
+        $password = (string) ($input['password'] ?? '');
+
+        if ($username === '' || $password === '') {
+            adbms_respond(['success' => false, 'error' => 'Username and password are required.'], 422);
+        }
+
+        adbms_respond([
+            'success' => true,
+            'user' => adbms_authenticate($pdo, $username, $password),
+        ]);
+    }
+
+    $payload = [];
+    if ($method === 'POST') {
+        $payload = adbms_json_input();
+    }
+
+    $items = [];
+    if (isset($payload['items']) && is_array($payload['items'])) {
+        $items = $payload['items'];
+    } elseif ($method === 'POST' && array_is_list($payload)) {
+        $items = $payload;
+    } elseif ($method === 'POST' && !empty($payload)) {
+        $items = [$payload];
+    }
+
+    switch ($entity) {
+        case 'users':
+            if ($action === 'list' || $method === 'GET') {
+                adbms_respond(['success' => true, 'items' => adbms_fetch_users($pdo)]);
+            }
+            if ($action === 'save') {
+                adbms_sync_users($pdo, $items);
+                adbms_respond(['success' => true, 'items' => adbms_fetch_users($pdo)]);
+            }
+            break;
+
+        case 'rooms':
+            if ($action === 'list' || $method === 'GET') {
+                adbms_respond(['success' => true, 'items' => adbms_fetch_rooms($pdo)]);
+            }
+            if ($action === 'save') {
+                adbms_sync_rooms($pdo, $items);
+                adbms_respond(['success' => true, 'items' => adbms_fetch_rooms($pdo)]);
+            }
+            break;
+
+        case 'checkins':
+            if ($action === 'list' || $method === 'GET') {
+                adbms_respond(['success' => true, 'items' => adbms_fetch_checkins($pdo)]);
+            }
+            if ($action === 'save') {
+                adbms_sync_checkins($pdo, $items);
+                adbms_respond(['success' => true, 'items' => adbms_fetch_checkins($pdo)]);
+            }
+            break;
+
+        case 'schedules':
+            if ($action === 'list' || $method === 'GET') {
+                adbms_respond(['success' => true, 'items' => adbms_fetch_schedules($pdo)]);
+            }
+            if ($action === 'save') {
+                adbms_sync_schedules($pdo, $items);
+                adbms_respond(['success' => true, 'items' => adbms_fetch_schedules($pdo)]);
+            }
+            break;
+
+        case 'reservations':
+            if ($action === 'list' || $method === 'GET') {
+                adbms_respond(['success' => true, 'items' => adbms_fetch_reservations($pdo)]);
+            }
+            if ($action === 'save') {
+                adbms_sync_reservations($pdo, $items);
+                adbms_respond(['success' => true, 'items' => adbms_fetch_reservations($pdo)]);
+            }
+            break;
+
+        case 'notifications':
+            if ($action === 'list' || $method === 'GET') {
+                adbms_respond(['success' => true, 'items' => adbms_fetch_notifications($pdo)]);
+            }
+            if ($action === 'save') {
+                adbms_sync_notifications($pdo, $items);
+                adbms_respond(['success' => true, 'items' => adbms_fetch_notifications($pdo)]);
+            }
+            break;
+    }
+
+    adbms_respond(['success' => false, 'error' => 'Unsupported entity or action.'], 404);
+} catch (Throwable $e) {
+    adbms_respond([
+        'success' => false,
+        'error' => $e->getMessage(),
+    ], 500);
+}

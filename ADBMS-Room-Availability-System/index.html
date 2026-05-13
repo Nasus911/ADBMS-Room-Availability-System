@@ -1897,13 +1897,85 @@ const CHECKINS_KEY = 'adbms_checkins_v1';
 const USERS_KEY = 'adbms_users_v1';
 const LAST_CHANGE_KEY = 'adbms_last_change_v1';
 const SCHEDULES_KEY = 'adbms_schedules_v1';
+const RESERVATIONS_KEY = 'adbms_reservations_v1';
+const NOTIFY_KEY = 'adbms_notifications_v1';
+const API_ENDPOINT = 'api.php';
+
+function apiUrl(entity, action) {
+  var url = new URL(API_ENDPOINT, window.location.href);
+  url.searchParams.set('entity', entity);
+  if (action) url.searchParams.set('action', action);
+  return url.toString();
+}
+
+async function apiRequest(entity, action, payload) {
+  var response = await fetch(apiUrl(entity, action), {
+    method: payload === undefined ? 'GET' : 'POST',
+    headers: payload === undefined ? undefined : { 'Content-Type': 'application/json' },
+    body: payload === undefined ? undefined : JSON.stringify(payload),
+  });
+
+  var data;
+  try {
+    data = await response.json();
+  } catch (error) {
+    throw new Error('Invalid response from database service.');
+  }
+
+  if (!response.ok || !data || data.success === false) {
+    throw new Error((data && data.error) || 'Database request failed.');
+  }
+
+  return data;
+}
+
+function readCachedJson(key, fallback) {
+  try {
+    var raw = localStorage.getItem(key);
+    if (raw) return JSON.parse(raw);
+  } catch (e) {}
+  return fallback;
+}
+
+function writeCachedJson(key, value) {
+  try { localStorage.setItem(key, JSON.stringify(value)); } catch (e) {}
+}
+
+function replaceArray(target, items) {
+  target.length = 0;
+  (Array.isArray(items) ? items : []).forEach(function(item) {
+    target.push(item);
+  });
+}
+
+function normalizeDateTimeValue(value) {
+  if (value === null || value === undefined || value === '') return null;
+  if (typeof value === 'number') {
+    return new Date(value).toISOString().slice(0, 19).replace('T', ' ');
+  }
+  if (typeof value === 'string') {
+    if (value.indexOf('T') !== -1) {
+      var parsed = new Date(value);
+      if (!isNaN(parsed.getTime())) {
+        return parsed.toISOString().slice(0, 19).replace('T', ' ');
+      }
+    }
+    return value;
+  }
+  return null;
+}
+
+function normalizeCollectionPayload(items) {
+  return Array.isArray(items) ? items : [];
+}
 
 // in-memory checkins log
 let checkins = [];
 let schedules = [];
 
 function saveRooms() {
-  try { localStorage.setItem(ROOMS_KEY, JSON.stringify(rooms)); } catch (e) {}
+  writeCachedJson(ROOMS_KEY, rooms);
+  return apiRequest('rooms', 'save', { items: rooms }).catch(function() { return null; });
 }
 
 function announceRoomChange(roomNumber) {
@@ -1914,76 +1986,118 @@ function announceRoomChange(roomNumber) {
 }
 
 function loadRooms() {
-  try {
-    var raw = localStorage.getItem(ROOMS_KEY);
-    if (raw) {
-      var parsed = JSON.parse(raw);
-      if (Array.isArray(parsed)) {
-        // shallow replace contents while keeping reference
-        rooms.length = 0;
-        parsed.forEach(function(r){ rooms.push(r); });
-      }
-    } else {
-      // initialize storage with current rooms
-      saveRooms();
+  return apiRequest('rooms', 'list').then(function(response) {
+    if (response && Array.isArray(response.items)) {
+      replaceArray(rooms, response.items);
+      writeCachedJson(ROOMS_KEY, rooms);
+      return rooms;
     }
-  } catch (e) {}
+    throw new Error('No room data returned.');
+  }).catch(function() {
+    var cached = readCachedJson(ROOMS_KEY, null);
+    if (Array.isArray(cached)) {
+      replaceArray(rooms, cached);
+      return rooms;
+    }
+    writeCachedJson(ROOMS_KEY, rooms);
+    return rooms;
+  });
 }
 
 function saveUsers() {
-  try { localStorage.setItem(USERS_KEY, JSON.stringify(users)); } catch (e) {}
+  writeCachedJson(USERS_KEY, users);
+  return apiRequest('users', 'save', { items: users }).catch(function() { return null; });
 }
 
 function loadUsers() {
-  try {
-    var raw = localStorage.getItem(USERS_KEY);
-    if (raw) {
-      var parsed = JSON.parse(raw);
-      if (Array.isArray(parsed) && parsed.length) {
-        users = parsed.slice();
-        return;
-      }
+  return apiRequest('users', 'list').then(function(response) {
+    if (response && Array.isArray(response.items) && response.items.length) {
+      users = response.items.slice();
+      writeCachedJson(USERS_KEY, users);
+      return users;
     }
-  } catch (e) {}
-  users = defaultUsers.slice();
-  saveUsers();
+    throw new Error('No user data returned.');
+  }).catch(function() {
+    var cached = readCachedJson(USERS_KEY, null);
+    if (Array.isArray(cached) && cached.length) {
+      users = cached.slice();
+      return users;
+    }
+    users = defaultUsers.slice();
+    writeCachedJson(USERS_KEY, users);
+    return users;
+  });
 }
 
 function saveCheckins() {
-  try { localStorage.setItem(CHECKINS_KEY, JSON.stringify(checkins)); } catch (e) {}
+  writeCachedJson(CHECKINS_KEY, checkins);
+  return apiRequest('checkins', 'save', { items: checkins }).catch(function() { return null; });
 }
 
 function loadCheckins() {
-  try {
-    var raw = localStorage.getItem(CHECKINS_KEY);
-    checkins = raw ? JSON.parse(raw) : checkins;
-  } catch (e) { /* keep in-memory */ }
+  return apiRequest('checkins', 'list').then(function(response) {
+    if (response && Array.isArray(response.items)) {
+      checkins = response.items.slice();
+      writeCachedJson(CHECKINS_KEY, checkins);
+      return checkins;
+    }
+    throw new Error('No check-in data returned.');
+  }).catch(function() {
+    var cached = readCachedJson(CHECKINS_KEY, null);
+    if (Array.isArray(cached)) {
+      checkins = cached.slice();
+      return checkins;
+    }
+    return checkins;
+  });
 }
 
 function saveSchedules() {
-  try { localStorage.setItem(SCHEDULES_KEY, JSON.stringify(schedules)); } catch (e) {}
+  writeCachedJson(SCHEDULES_KEY, schedules);
+  return apiRequest('schedules', 'save', { items: schedules }).catch(function() { return null; });
 }
 
 function loadSchedules() {
-  try {
-    var raw = localStorage.getItem(SCHEDULES_KEY);
-    schedules = raw ? JSON.parse(raw) : schedules;
-  } catch (e) { /* keep in-memory */ }
+  return apiRequest('schedules', 'list').then(function(response) {
+    if (response && Array.isArray(response.items)) {
+      schedules = response.items.slice();
+      writeCachedJson(SCHEDULES_KEY, schedules);
+      return schedules;
+    }
+    throw new Error('No schedule data returned.');
+  }).catch(function() {
+    var cached = readCachedJson(SCHEDULES_KEY, null);
+    if (Array.isArray(cached)) {
+      schedules = cached.slice();
+      return schedules;
+    }
+    return schedules;
+  });
 }
 
-// Reservations system (for professor-requested room reservations)
-const RESERVATIONS_KEY = 'adbms_reservations_v1';
 let reservations = [];
 
 function saveReservations() {
-  try { localStorage.setItem(RESERVATIONS_KEY, JSON.stringify(reservations)); } catch (e) {}
+  writeCachedJson(RESERVATIONS_KEY, reservations);
+  return apiRequest('reservations', 'save', { items: reservations }).catch(function() { return null; });
 }
 
 function loadReservations() {
-  try {
-    var raw = localStorage.getItem(RESERVATIONS_KEY);
-    reservations = raw ? JSON.parse(raw) : reservations;
-  } catch (e) { /* keep in-memory */ }
+  return apiRequest('reservations', 'list').then(function(response) {
+    if (response && Array.isArray(response.items)) {
+      reservations = response.items.slice();
+      writeCachedJson(RESERVATIONS_KEY, reservations);
+      return reservations;
+    }
+    throw new Error('No reservation data returned.');
+  }).catch(function() {
+    var cached = readCachedJson(RESERVATIONS_KEY, null);
+    if (Array.isArray(cached)) {
+      reservations = cached.slice();
+      return reservations;
+    }
+    return reservations;
+  });
 }
 
 function slotToNumber(value) {
@@ -2160,17 +2274,24 @@ let scheduledCheckins = [];
 
 // persistent notifications (per-user)
 let notifications = [];
-const NOTIFY_KEY = 'adbms_notifications_v1';
-
 function loadNotifications() {
-  try {
-    var raw = localStorage.getItem(NOTIFY_KEY);
-    notifications = raw ? JSON.parse(raw) : [];
-  } catch (e) { notifications = []; }
+  return apiRequest('notifications', 'list').then(function(response) {
+    if (response && Array.isArray(response.items)) {
+      notifications = response.items.slice();
+      writeCachedJson(NOTIFY_KEY, notifications);
+      return notifications;
+    }
+    throw new Error('No notification data returned.');
+  }).catch(function() {
+    var cached = readCachedJson(NOTIFY_KEY, []);
+    notifications = Array.isArray(cached) ? cached.slice() : [];
+    return notifications;
+  });
 }
 
 function saveNotifications() {
-  try { localStorage.setItem(NOTIFY_KEY, JSON.stringify(notifications)); } catch (e) {}
+  writeCachedJson(NOTIFY_KEY, notifications);
+  return apiRequest('notifications', 'save', { items: notifications }).catch(function() { return null; });
 }
 
 loadNotifications();
@@ -2430,7 +2551,14 @@ function getDisplayName(user) {
 }
 
 function formatToday() {
-  return new Date().toLocaleDateString("en-US", { month: "short", day: "numeric" });
+  return new Date().toISOString();
+}
+
+function formatDisplayDate(value) {
+  if (value === null || value === undefined || value === '' || value === '-') return '-';
+  var parsed = new Date(value);
+  if (isNaN(parsed.getTime())) return String(value);
+  return parsed.toLocaleDateString("en-US", { month: "short", day: "numeric" });
 }
 
 function scheduleStringToDate(dateStr, hour, minute, amPm) {
@@ -2682,7 +2810,7 @@ function renderUsersTable() {
       '<td>' + user.username + '</td>' +
       '<td>' + user.role + '</td>' +
       '<td><span class="status-pill ' + pillClass + '">' + user.status + '</span></td>' +
-      '<td>' + (user.lastLogin || "-") + '</td>' +
+      '<td>' + formatDisplayDate(user.lastLogin) + '</td>' +
       '<td>' + actionCell + '</td>' +
       '</tr>';
   }).join("");
@@ -3396,34 +3524,40 @@ function openUserModal() {
   userFormError.classList.add("hidden");
 }
 
-loginForm.addEventListener("submit", function(event) {
+loginForm.addEventListener("submit", async function(event) {
   event.preventDefault();
-  // ensure we have the latest persisted users (handles other tabs/imports)
-  try { loadUsers(); } catch (e) { /* ignore */ }
   var username = loginUsername.value.trim();
   var password = loginPassword.value;
-  // diagnostic log for debugging login issues
-  try { console.debug('Attempting login for', username, 'known users:', users.map(function(u){ return u.username; })); } catch (e) {}
-  var user = users.find(function(c) {
-    return c.username.toLowerCase() === username.toLowerCase() && c.password === password;
-  });
-  if (!user) {
-    loginError.textContent = "Invalid username or password.";
-    loginError.classList.remove("hidden");
-    try { console.debug('Login failed for', username); } catch (e) {}
+  loginError.textContent = "";
+  loginError.classList.add("hidden");
+
+  try {
+    await apiRequest('auth', 'login', { username: username, password: password });
+    await loadUsers();
+    var authenticatedUser = getUserByUsername(username);
+    currentUser = authenticatedUser || users.find(function(c) { return c.username && c.username.toLowerCase() === username.toLowerCase(); }) || null;
+    if (!currentUser) {
+      throw new Error('Authenticated user record was not found.');
+    }
+    showDashboardForUser(currentUser);
     return;
-  }
-  if (user.status !== "Active") {
+  } catch (apiError) {
+    var fallbackUser = defaultUsers.find(function(c) {
+      return c.username.toLowerCase() === username.toLowerCase() && c.password === password;
+    });
+    if (!fallbackUser) {
+      loginError.textContent = apiError && apiError.message ? apiError.message : "Invalid username or password.";
+      loginError.classList.remove("hidden");
+      return;
+    }
+    if (fallbackUser.status !== "Active") {
     loginError.textContent = "This account is inactive. Contact the admin.";
     loginError.classList.remove("hidden");
     return;
+    }
+    currentUser = Object.assign({}, fallbackUser, { lastLogin: formatToday() });
+    showDashboardForUser(currentUser);
   }
-  loginError.classList.add("hidden");
-  loginError.textContent = "Invalid username or password.";
-  currentUser = user;
-  currentUser.lastLogin = formatToday();
-  saveUsers();
-  showDashboardForUser(user);
 });
 
 navItems.forEach(function(item) {
@@ -3591,7 +3725,7 @@ userForm.addEventListener("submit", function(event) {
   }
   // normalize username storage to lowercase to avoid case-sensitivity issues
   var normalizedUsername = username.toLowerCase();
-  users.push({ name: fullName, username: normalizedUsername, password: password, role: role, status: "Active", lastLogin: "-" });
+  users.push({ name: fullName, username: normalizedUsername, password: password, role: role, status: "Active", lastLogin: null });
   // persist users immediately so login in other tabs or after reload works
   saveUsers();
   saveUsers();
@@ -3813,7 +3947,14 @@ const importDataBtn = document.getElementById('importDataBtn');
 const loadSampleBtn = document.getElementById('loadSampleBtn');
 
 function exportData() {
-  var payload = { users: users, rooms: rooms, checkins: checkins };
+  var payload = {
+    users: users,
+    rooms: rooms,
+    checkins: checkins,
+    schedules: schedules,
+    reservations: reservations,
+    notifications: notifications,
+  };
   var blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
   var url = URL.createObjectURL(blob);
   var a = document.createElement('a');
@@ -3827,15 +3968,34 @@ function importDataFile(file) {
     try {
       var parsed = JSON.parse(e.target.result);
       if (parsed.rooms) {
-        try { localStorage.setItem(ROOMS_KEY, JSON.stringify(parsed.rooms)); } catch(e) {}
+        rooms.length = 0;
+        parsed.rooms.forEach(function(room) { rooms.push(room); });
+        saveRooms();
       }
       if (parsed.checkins) {
-        try { localStorage.setItem(CHECKINS_KEY, JSON.stringify(parsed.checkins)); } catch(e) {}
+        checkins = parsed.checkins.slice();
+        saveCheckins();
       }
       if (parsed.users) {
-        try { users = parsed.users.slice(); saveUsers(); } catch(e) {}
+        users = parsed.users.slice();
+        saveUsers();
       }
-      loadRooms(); loadCheckins(); rerenderVisibleDashboard(); notify('Import', 'Demo data imported');
+      if (parsed.schedules) {
+        schedules = parsed.schedules.slice();
+        saveSchedules();
+      }
+      if (parsed.reservations) {
+        reservations = parsed.reservations.slice();
+        saveReservations();
+      }
+      if (parsed.notifications) {
+        notifications = parsed.notifications.slice();
+        saveNotifications();
+      }
+      Promise.all([loadRooms(), loadCheckins(), loadUsers(), loadSchedules(), loadReservations(), loadNotifications()]).then(function() {
+        rerenderVisibleDashboard();
+        notify('Import', 'Demo data imported');
+      });
     } catch (err) { notify('Import error', 'Invalid file'); }
   };
   reader.readAsText(file);
@@ -3892,7 +4052,23 @@ function highlightRoomRow(roomNumber) {
   });
 }
 
-showLogin();
+async function initializeApp() {
+  try {
+    await Promise.all([
+      loadRooms(),
+      loadCheckins(),
+      loadUsers(),
+      loadSchedules(),
+      loadReservations(),
+      loadNotifications(),
+    ]);
+  } catch (e) {
+    // fall back to cached/demo data and keep the UI usable
+  }
+  showLogin();
+}
+
+initializeApp();
     </script>
   </body>
 </html>
