@@ -619,6 +619,140 @@ button[disabled] {
   padding-inline: 16px;
 }
 
+.schedule-group {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.schedule-group input,
+.schedule-group select {
+  height: 40px;
+  border-radius: 6px;
+  border: 1px solid #cdd2dc;
+  padding: 6px 10px;
+}
+
+.reservation-panel {
+  margin-top: 24px;
+}
+
+.reservation-title {
+  margin: 0 0 14px;
+  color: #eef5ff;
+}
+
+.reservation-subtitle {
+  margin: 18px 0 14px;
+  color: #eef5ff;
+}
+
+.reservation-form {
+  display: grid;
+  display: grid;
+  gap: 14px;
+  padding: 18px;
+  border: 1px solid rgba(189, 214, 247, 0.34);
+  border-radius: 14px;
+  background: rgba(5, 18, 42, 0.42);
+  backdrop-filter: blur(2px);
+}
+
+.assign-toolbar {
+  display: grid;
+  gap: 12px;
+}
+
+.assign-toolbar select {
+  width: 100%;
+  min-height: 40px;
+  padding: 8px 10px;
+  border-radius: 6px;
+  border: 1px solid rgba(255,255,255,0.18);
+  background: rgba(255,255,255,0.92);
+  color: #142433;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: border-color 0.2s;
+}
+
+.assign-toolbar .primary {
+  height: 40px;
+  padding-inline: 16px;
+  width: 100%;
+}
+
+.schedule-group {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr)) auto;
+  align-items: end;
+  gap: 8px;
+}
+
+.schedule-group label {
+  color: rgba(237, 245, 255, 0.9);
+  font-size: 13px;
+  font-weight: 700;
+  grid-column: 1 / -1;
+  margin-bottom: 4px;
+}
+
+.schedule-group input,
+.schedule-group select {
+  min-height: 40px;
+  border-radius: 6px;
+  border: 1px solid rgba(255,255,255,0.18);
+  background: rgba(255,255,255,0.92);
+  padding: 8px 10px;
+  color: #142433;
+  font-size: 13px;
+  font-weight: 500;
+  transition: border-color 0.2s;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.reservation-input,
+.reservation-select {
+  width: 100%;
+  min-height: 40px;
+  padding: 8px 10px;
+  border-radius: 6px;
+  border: 1px solid rgba(255,255,255,0.18);
+  background: rgba(255,255,255,0.92);
+  color: #142433;
+  font-size: 13px;
+  font-weight: 500;
+  transition: border-color 0.2s, background-color 0.2s;
+  cursor: pointer;
+}
+
+.reservation-input:focus,
+.reservation-select:focus,
+.schedule-group input:focus,
+.schedule-group select:focus,
+.assign-toolbar select:focus {
+  outline: none;
+  border-color: #0B84FF;
+  background-color: #ffffff;
+  box-shadow: 0 0 0 2px rgba(11, 132, 255, 0.1);
+}
+
+.reservation-submit {
+  width: 100%;
+  min-height: 40px;
+}
+
+.reservation-table .table-scroll {
+  margin-top: 0;
+}
+
+.reservation-table table {
+  background: #fff;
+}
+
 .panel .form-error {
   margin: 0 0 10px;
 }
@@ -1255,6 +1389,10 @@ select {
                     <div class="stat-title">Rooms Available</div>
                     <div id="roomsAvailableCount" class="stat-value">0</div>
                   </div>
+                  <div class="stat-card" id="reservationsStat" style="cursor:pointer;">
+                    <div class="stat-title">Reservations</div>
+                    <div id="reservationsCount" class="stat-value">0</div>
+                  </div>
                   <div class="stat-card">
                     <div class="stat-title">Rooms Occupied</div>
                     <div id="roomsOccupiedCount" class="stat-value">0</div>
@@ -1269,18 +1407,62 @@ select {
                   </div>
                 </div>
                 <div class="panel">
-                  <div class="panel-header">
-                    <h3>Room Availability</h3>
-                    <form id="adminAssignForm" class="assign-toolbar">
-                      <select id="adminProfessorSelect" aria-label="Select professor">
-                        <option value="">Select professor</option>
+                  <h3>Room Assignment</h3>
+                  <form id="adminAssignForm" class="assign-form">
+                    <div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px;">
+                      <div style="display: grid; gap: 6px;">
+                        <label for="adminProfessorSelect" style="color: rgba(237, 245, 255, 0.9); font-size: 13px; font-weight: 700;">Professor</label>
+                        <select id="adminProfessorSelect" aria-label="Select professor">
+                          <option value="">Select professor</option>
+                        </select>
+                      </div>
+                      <div style="display: grid; gap: 6px;">
+                        <label for="adminRoomSelect" style="color: rgba(237, 245, 255, 0.9); font-size: 13px; font-weight: 700;">Room</label>
+                        <select id="adminRoomSelect" aria-label="Select room">
+                          <option value="">Select room</option>
+                        </select>
+                      </div>
+                    </div>
+                    <div class="schedule-group">
+                      <label for="scheduleDate">Schedule Date & Time</label>
+                      <input type="date" id="scheduleDate" aria-label="Schedule date" />
+                      <select id="scheduleHour" aria-label="Hour">
+                        <option value="">Hour</option>
+                        <option value="1">01</option>
+                        <option value="2">02</option>
+                        <option value="3">03</option>
+                        <option value="4">04</option>
+                        <option value="5">05</option>
+                        <option value="6">06</option>
+                        <option value="7">07</option>
+                        <option value="8">08</option>
+                        <option value="9">09</option>
+                        <option value="10">10</option>
+                        <option value="11">11</option>
+                        <option value="12">12</option>
                       </select>
-                      <select id="adminRoomSelect" aria-label="Select room">
-                        <option value="">Select room</option>
+                      <select id="scheduleMinute" aria-label="Minute">
+                        <option value="">Min</option>
+                        <option value="0">00</option>
+                        <option value="5">05</option>
+                        <option value="10">10</option>
+                        <option value="15">15</option>
+                        <option value="20">20</option>
+                        <option value="25">25</option>
+                        <option value="30">30</option>
+                        <option value="35">35</option>
+                        <option value="40">40</option>
+                        <option value="45">45</option>
+                        <option value="50">50</option>
+                        <option value="55">55</option>
                       </select>
-                      <button type="submit" class="primary">Assign Room</button>
-                    </form>
-                  </div>
+                      <select id="scheduleAmPm" aria-label="AM/PM">
+                        <option value="AM">AM</option>
+                        <option value="PM">PM</option>
+                      </select>
+                      <button type="submit" class="primary">Assign</button>
+                    </div>
+                  </form>
                   <p id="adminAssignError" class="form-error hidden"></p>
                   <div class="table-scroll">
                     <table>
@@ -1294,6 +1476,27 @@ select {
                           </tr>
                       </thead>
                       <tbody id="adminRoomBody"></tbody>
+                    </table>
+                  </div>
+                </div>
+                <div class="panel" style="margin-top: 30px; display: none;">
+                  <div class="panel-header">
+                    <h3>Pending Room Reservations</h3>
+                  </div>
+                  <div class="table-scroll">
+                    <table>
+                      <thead>
+                        <tr>
+                          <th>Professor</th>
+                          <th>Room</th>
+                          <th>Date</th>
+                          <th>Time</th>
+                          <th>Requested</th>
+                          <th>Status</th>
+                          <th>Action</th>
+                        </tr>
+                      </thead>
+                      <tbody id="adminPendingReservationsBody"></tbody>
                     </table>
                   </div>
                 </div>
@@ -1429,6 +1632,62 @@ select {
             </div>
           </div>
         </div>
+        <div id="scheduleDetailsModal" class="modal hidden" aria-hidden="true">
+          <div class="modal-card">
+            <div class="modal-head">
+              <h3>Schedule Details</h3>
+              <button id="scheduleDetailsClose" class="ghost" type="button">✕</button>
+            </div>
+            <div class="modal-body" style="padding: 20px;">
+              <div style="display: grid; gap: 16px;">
+                <div style="border: 1px solid #d7dbe4; border-radius: 6px; padding: 14px; background: #f9fafb;">
+                  <div style="font-size: 12px; color: #6b7280; text-transform: uppercase; letter-spacing: 0.5px; font-weight: 600; margin-bottom: 6px;">Classroom</div>
+                  <div id="schedDetailRoom" style="font-size: 20px; font-weight: 700; color: #1f4a86;">Room 101</div>
+                </div>
+                
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+                  <div style="border: 1px solid #d7dbe4; border-radius: 6px; padding: 14px; background: #f9fafb;">
+                    <div style="font-size: 12px; color: #6b7280; text-transform: uppercase; letter-spacing: 0.5px; font-weight: 600; margin-bottom: 6px;">Reservation Date</div>
+                    <div id="schedDetailDate" style="font-size: 16px; font-weight: 600; color: #142433;">May 15, 2026</div>
+                  </div>
+                  <div style="border: 1px solid #d7dbe4; border-radius: 6px; padding: 14px; background: #f9fafb;">
+                    <div style="font-size: 12px; color: #6b7280; text-transform: uppercase; letter-spacing: 0.5px; font-weight: 600; margin-bottom: 6px;">Reservation Time</div>
+                    <div id="schedDetailTime" style="font-size: 16px; font-weight: 600; color: #142433;">10:30 AM</div>
+                  </div>
+                </div>
+
+                <div style="border: 1px solid #d7dbe4; border-radius: 6px; padding: 14px; background: #f9fafb;">
+                  <div style="font-size: 12px; color: #6b7280; text-transform: uppercase; letter-spacing: 0.5px; font-weight: 600; margin-bottom: 6px;">Status</div>
+                  <div id="schedDetailStatus" style="font-size: 14px; font-weight: 600; color: #27773a;">📅 Pending</div>
+                </div>
+
+                <div style="border: 1px solid #d7dbe4; border-radius: 6px; padding: 14px; background: #f9fafb;">
+                  <div style="font-size: 12px; color: #6b7280; text-transform: uppercase; letter-spacing: 0.5px; font-weight: 600; margin-bottom: 6px;">Floor</div>
+                  <div id="schedDetailFloor" style="font-size: 14px; color: #142433;">Floor 1</div>
+                </div>
+
+                <div style="border: 1px solid #d7dbe4; border-radius: 6px; padding: 14px; background: #f9fafb;">
+                  <div style="font-size: 12px; color: #6b7280; text-transform: uppercase; letter-spacing: 0.5px; font-weight: 600; margin-bottom: 6px;">Room Capacity</div>
+                  <div id="schedDetailCapacity" style="font-size: 14px; color: #142433;">30 Students</div>
+                </div>
+              </div>
+              <button id="scheduleDetailsCloseBtn" class="secondary" style="width: 100%; margin-top: 20px;">Close</button>
+            </div>
+          </div>
+        </div>
+        <div id="reservationsModal" class="modal hidden" aria-hidden="true">
+          <div class="modal-card">
+            <div class="modal-head">
+              <h3>Reservations & Requests</h3>
+              <button id="reservationsClose" class="ghost" type="button">✕</button>
+            </div>
+            <div class="modal-body" style="max-height:70vh; overflow:auto; padding:12px;">
+              <div id="reservationsContent">
+                <!-- populated dynamically -->
+              </div>
+            </div>
+          </div>
+        </div>
       </section>
 
       <section id="professorDashboard" class="role-window dashboard-screen card hidden">
@@ -1461,6 +1720,78 @@ select {
               <div class="stat-card">
                 <div class="stat-title">My Utilization</div>
                 <div id="profUtilizationPercent" class="stat-value">0%</div>
+              </div>
+            </div>
+            <div id="profScheduledSection" style="margin-bottom: 20px; display: none;">
+              <h3 style="color: #eef5ff; margin-top: 20px;">Scheduled Rooms</h3>
+              <div class="table-scroll">
+                <table>
+                  <thead>
+                    <tr>
+                      <th>Room</th>
+                      <th>Schedule Date</th>
+                      <th>Schedule Time</th>
+                      <th>Status</th>
+                    </tr>
+                  </thead>
+                  <tbody id="profScheduledBody"></tbody>
+                </table>
+              </div>
+            </div>
+            <div id="profReservationSection" class="reservation-panel">
+              <h3 class="reservation-title">Request Room Reservation</h3>
+              <form id="profReservationForm" class="reservation-form panel">
+                <div class="reservation-grid two-cols">
+                  <div class="reservation-field">
+                    <label for="profReqRoom" class="reservation-label">Select Room</label>
+                    <select id="profReqRoom" class="reservation-select" aria-label="Select room" required>
+                      <option value="">Choose a room...</option>
+                    </select>
+                  </div>
+                  <div class="reservation-field">
+                    <label for="profReqDate" class="reservation-label">Date</label>
+                    <input type="date" id="profReqDate" class="reservation-input" required />
+                  </div>
+                </div>
+                <div class="reservation-grid four-cols">
+                  <div class="reservation-field">
+                    <label for="profReqHour" class="reservation-label">Hour</label>
+                    <select id="profReqHour" class="reservation-select" required>
+                      <option value="">Hour</option>
+                      <option value="1">01</option><option value="2">02</option><option value="3">03</option><option value="4">04</option><option value="5">05</option><option value="6">06</option><option value="7">07</option><option value="8">08</option><option value="9">09</option><option value="10">10</option><option value="11">11</option><option value="12">12</option>
+                    </select>
+                  </div>
+                  <div class="reservation-field">
+                    <label for="profReqMin" class="reservation-label">Min</label>
+                    <select id="profReqMin" class="reservation-select" required>
+                      <option value="">Min</option>
+                      <option value="0">00</option><option value="5">05</option><option value="10">10</option><option value="15">15</option><option value="20">20</option><option value="25">25</option><option value="30">30</option><option value="35">35</option><option value="40">40</option><option value="45">45</option><option value="50">50</option><option value="55">55</option>
+                    </select>
+                  </div>
+                  <div class="reservation-field">
+                    <label for="profReqAmPm" class="reservation-label">AM/PM</label>
+                    <select id="profReqAmPm" class="reservation-select" required>
+                      <option value="AM">AM</option>
+                      <option value="PM">PM</option>
+                    </select>
+                  </div>
+                  <button type="submit" class="primary reservation-submit">Request</button>
+                </div>
+                <p id="profReservationError" class="form-error hidden"></p>
+              </form>
+              <h3 class="reservation-subtitle">My Pending Reservations</h3>
+              <div class="reservation-table table-scroll">
+                <table>
+                  <thead>
+                    <tr>
+                      <th>Room</th>
+                      <th>Date</th>
+                      <th>Time</th>
+                      <th>Status</th>
+                    </tr>
+                  </thead>
+                  <tbody id="profPendingReservationsBody"></tbody>
+                </table>
               </div>
             </div>
             <div class="table-scroll">
@@ -1565,9 +1896,11 @@ const ROOMS_KEY = 'adbms_rooms_v1';
 const CHECKINS_KEY = 'adbms_checkins_v1';
 const USERS_KEY = 'adbms_users_v1';
 const LAST_CHANGE_KEY = 'adbms_last_change_v1';
+const SCHEDULES_KEY = 'adbms_schedules_v1';
 
 // in-memory checkins log
 let checkins = [];
+let schedules = [];
 
 function saveRooms() {
   try { localStorage.setItem(ROOMS_KEY, JSON.stringify(rooms)); } catch (e) {}
@@ -1627,10 +1960,192 @@ function loadCheckins() {
   } catch (e) { /* keep in-memory */ }
 }
 
+function saveSchedules() {
+  try { localStorage.setItem(SCHEDULES_KEY, JSON.stringify(schedules)); } catch (e) {}
+}
+
+function loadSchedules() {
+  try {
+    var raw = localStorage.getItem(SCHEDULES_KEY);
+    schedules = raw ? JSON.parse(raw) : schedules;
+  } catch (e) { /* keep in-memory */ }
+}
+
+// Reservations system (for professor-requested room reservations)
+const RESERVATIONS_KEY = 'adbms_reservations_v1';
+let reservations = [];
+
+function saveReservations() {
+  try { localStorage.setItem(RESERVATIONS_KEY, JSON.stringify(reservations)); } catch (e) {}
+}
+
+function loadReservations() {
+  try {
+    var raw = localStorage.getItem(RESERVATIONS_KEY);
+    reservations = raw ? JSON.parse(raw) : reservations;
+  } catch (e) { /* keep in-memory */ }
+}
+
+function slotToNumber(value) {
+  var n = parseInt(value, 10);
+  return isNaN(n) ? null : n;
+}
+
+function normalizeSlotText(value) {
+  return String(value == null ? '' : value).trim();
+}
+
+function hasReservationConflict(roomNumber, date, hour, minute, amPm) {
+  // Exact-slot conflict: same room, same date, same hour, same minute, same AM/PM.
+  var targetDate = normalizeSlotText(date);
+  var targetHour = slotToNumber(hour);
+  var targetMinute = slotToNumber(minute);
+  var targetAmPm = normalizeSlotText(amPm).toUpperCase();
+
+  var existing = schedules.find(function(s) {
+    if (Number(s.roomNumber) !== Number(roomNumber)) return false;
+    if (normalizeSlotText(s.date) !== targetDate) return false;
+
+    var existingHour = slotToNumber(s.hour);
+    var existingMinute = slotToNumber(s.minute);
+    if (existingHour === null || targetHour === null || existingHour !== targetHour) return false;
+    if (existingMinute === null || targetMinute === null || existingMinute !== targetMinute) return false;
+
+    return normalizeSlotText(s.amPm).toUpperCase() === targetAmPm;
+  });
+
+  return existing !== undefined;
+}
+
+function validateScheduleTime(hour, minute, amPm) {
+  // Validate hour is between 1-12
+  var hourNum = parseInt(hour);
+  if (isNaN(hourNum) || hourNum < 1 || hourNum > 12) {
+    return { valid: false, error: 'Hour must be between 01 and 12' };
+  }
+  
+  // Validate minute is valid (0, 5, 10, 15, 20, 25, 30, 35, 40, 45, 50, 55)
+  var minuteNum = parseInt(minute);
+  var validMinutes = [0, 5, 10, 15, 20, 25, 30, 35, 40, 45, 50, 55];
+  if (!validMinutes.includes(minuteNum)) {
+    return { valid: false, error: 'Minutes must be in 5-minute intervals' };
+  }
+  
+  // Validate AM/PM
+  if (amPm !== 'AM' && amPm !== 'PM') {
+    return { valid: false, error: 'AM/PM selection is invalid' };
+  }
+  
+  return { valid: true };
+}
+
+function validateScheduleDate(dateStr) {
+  try {
+    var selectedDate = new Date(dateStr);
+    var today = new Date();
+    today.setHours(0, 0, 0, 0);
+    
+    // Date must be today or in the future
+    if (selectedDate < today) {
+      return { valid: false, error: 'Date must be today or in the future' };
+    }
+    
+    // Date cannot be more than 365 days in the future
+    var maxDate = new Date(today);
+    maxDate.setFullYear(maxDate.getFullYear() + 1);
+    if (selectedDate > maxDate) {
+      return { valid: false, error: 'Cannot schedule more than one year in advance' };
+    }
+    
+    return { valid: true };
+  } catch (e) {
+    return { valid: false, error: 'Invalid date format' };
+  }
+}
+
+function getProfessorReservations(profUsername) {
+  return reservations.filter(function(r) { return r.professorUsername === profUsername; });
+}
+
+function createReservation(professorUsername, roomNumber, date, hour, minute, amPm) {
+  var reservation = {
+    id: 'res_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9),
+    professorUsername: professorUsername,
+    roomNumber: roomNumber,
+    date: date,
+    hour: hour,
+    minute: minute,
+    amPm: amPm,
+    status: 'Pending', // Pending, Approved, Rejected
+    createdAt: new Date().toISOString(),
+    respondedAt: null
+  };
+  reservations.push(reservation);
+  saveReservations();
+  return reservation;
+}
+
+function approveReservation(reservationId, adminUsername) {
+  var reservation = reservations.find(function(r) { return r.id === reservationId; });
+  if (!reservation) return false;
+  
+  // Check for conflicts one more time before approving
+  if (hasReservationConflict(reservation.roomNumber, reservation.date, reservation.hour, reservation.minute, reservation.amPm)) {
+    return false;
+  }
+  
+  // Create schedule entry
+  var schedule = {
+    id: 'sched_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9),
+    professorUsername: reservation.professorUsername,
+    roomNumber: reservation.roomNumber,
+    date: reservation.date,
+    hour: reservation.hour,
+    minute: reservation.minute,
+    amPm: reservation.amPm,
+    createdAt: new Date().toISOString()
+  };
+  schedules.push(schedule);
+  saveSchedules();
+  
+  // Update reservation status
+  reservation.status = 'Approved';
+  reservation.respondedAt = new Date().toISOString();
+  saveReservations();
+  
+  // Notify professor
+  var prof = users.find(function(u) { return u.username === reservation.professorUsername; });
+  if (prof) {
+    notify('Reservation Approved', getDisplayName(prof) + ' - Room ' + reservation.roomNumber + ' on ' + reservation.date + ' at ' + reservation.hour + ':' + (reservation.minute < 10 ? '0' : '') + reservation.minute + ' ' + reservation.amPm + ' is approved!', {});
+  }
+  
+  return true;
+}
+
+function rejectReservation(reservationId, reason) {
+  var reservation = reservations.find(function(r) { return r.id === reservationId; });
+  if (!reservation) return false;
+  
+  reservation.status = 'Rejected';
+  reservation.respondedAt = new Date().toISOString();
+  reservation.rejectionReason = reason || 'Room conflict detected - another professor already has this room reserved at this time';
+  saveReservations();
+  
+  // Notify professor
+  var prof = users.find(function(u) { return u.username === reservation.professorUsername; });
+  if (prof) {
+    notify('Reservation Rejected', getDisplayName(prof) + ' - Room ' + reservation.roomNumber + ' on ' + reservation.date + ': ' + reservation.rejectionReason, {});
+  }
+  
+  return true;
+}
+
 // load persisted state if present
 loadRooms();
 loadCheckins();
 loadUsers();
+loadSchedules();
+loadReservations();
 
 let currentUser = null;
 
@@ -1836,6 +2351,10 @@ const adminRoomBody = document.getElementById("adminRoomBody");
 const adminAssignForm = document.getElementById("adminAssignForm");
 const adminProfessorSelect = document.getElementById("adminProfessorSelect");
 const adminRoomSelect = document.getElementById("adminRoomSelect");
+const scheduleDateInput = document.getElementById("scheduleDate");
+const scheduleHourInput = document.getElementById("scheduleHour");
+const scheduleMinuteInput = document.getElementById("scheduleMinute");
+const scheduleAmPmInput = document.getElementById("scheduleAmPm");
 const adminFloorSelect = document.getElementById("adminFloorSelect");
 const adminStatusSelect = document.getElementById("adminStatusSelect");
 const adminAssignError = document.getElementById("adminAssignError");
@@ -1914,6 +2433,31 @@ function formatToday() {
   return new Date().toLocaleDateString("en-US", { month: "short", day: "numeric" });
 }
 
+function scheduleStringToDate(dateStr, hour, minute, amPm) {
+  if (!dateStr || !hour || !minute || !amPm) return null;
+  var h = parseInt(hour, 10);
+  if (amPm === "PM" && h !== 12) h += 12;
+  if (amPm === "AM" && h === 12) h = 0;
+  var date = new Date(dateStr + "T" + (h < 10 ? "0" : "") + h + ":" + (minute < 10 ? "0" : "") + minute + ":00");
+  return date;
+}
+
+function isScheduleInPast(dateStr, hour, minute, amPm) {
+  var scheduleDate = scheduleStringToDate(dateStr, hour, minute, amPm);
+  if (!scheduleDate) return false;
+  return scheduleDate < new Date();
+}
+
+function isRoomCurrentlyScheduled(roomNumber) {
+  var now = new Date();
+  var activeSchedule = schedules.find(function(s) {
+    if (s.roomNumber !== roomNumber) return false;
+    var schedDate = scheduleStringToDate(s.date, s.hour, s.minute, s.amPm);
+    return schedDate && schedDate > now;
+  });
+  return activeSchedule || null;
+}
+
 function hideAllDashboards() {
   adminDashboard.classList.add("hidden");
   professorDashboard.classList.add("hidden");
@@ -1958,7 +2502,10 @@ function showDashboardForUser(user) {
     professorWelcome.textContent = "Welcome, " + getDisplayName(user) + "!";
     professorDashboard.classList.remove("hidden");
     populateProfessorFloorFilter();
+    populateProfessorReservationRooms();
     renderProfessorRooms();
+    renderProfessorSchedules();
+    renderProfessorPendingReservations();
     // show pending notifications for professor
     showPendingNotificationsForUser(user);
     return;
@@ -1997,22 +2544,64 @@ function getProfessorOptions() {
 }
 
 function getAvailableRooms() {
-  return rooms.filter(function(room) { return !room.occupiedBy; });
+  // For immediate assignments (no schedule slot selected), a room should
+  // be considered available as long as it is not currently occupied.
+  // Future scheduled reservations (e.g., for tomorrow) should NOT block
+  // an admin from assigning the room for right now.
+  return rooms.filter(function(room) {
+    return !room.occupiedBy;
+  });
+}
+
+function getAvailableRoomsForSlot(date, hour, minute, amPm) {
+  // For scheduling a future slot, current occupancy (occupiedBy) should not block
+  // the selection. Only exact-slot conflicts and existing schedules should block.
+  return rooms.filter(function(room) {
+    return !hasReservationConflict(room.room, date, hour, minute, amPm);
+  });
 }
 
 function getRoomStatus(room) {
-  if (!room) return '-';
-  if (room.status === 'maintenance') return 'Maintenance';
-  if (room.status === 'reserved') return 'Reserved';
-  if (room.occupiedBy) return 'Occupied';
-  if (room.status === 'occupied') return 'Occupied';
-  return 'Available';
+  return room.occupiedBy ? "Occupied" : "Available";
 }
 
 function getOccupantName(username) {
   if (!username) return "";
   var user = getUserByUsername(username);
   return user ? getDisplayName(user) : "Unknown";
+}
+
+function getScheduleInfo(roomNumber) {
+  var schedule = isRoomCurrentlyScheduled(roomNumber);
+  if (!schedule) return '-';
+  var user = getUserByUsername(schedule.professorUsername);
+  return user ? getDisplayName(user) : 'Scheduled';
+}
+
+function getScheduleTime(roomNumber) {
+  var schedule = isRoomCurrentlyScheduled(roomNumber);
+  if (!schedule) return '-';
+  var schedDate = new Date(schedule.date);
+  var formatted = schedDate.toLocaleDateString("en-US", { month: "short", day: "numeric" });
+  return formatted + ' at ' + schedule.hour + ':' + (schedule.minute < 10 ? '0' : '') + schedule.minute + ' ' + schedule.amPm;
+}
+
+function removeScheduledReservation(roomNumber) {
+  var schedule = isRoomCurrentlyScheduled(roomNumber);
+  if (!schedule) return false;
+
+  schedules = schedules.filter(function(item) { return item.id !== schedule.id; });
+  saveSchedules();
+
+  var prof = getUserByUsername(schedule.professorUsername);
+  var displayName = prof ? getDisplayName(prof) : schedule.professorUsername;
+  notify(
+    'Reservation Removed',
+    'Room ' + roomNumber + ' reservation for ' + displayName + ' on ' + schedule.date + ' at ' + schedule.hour + ':' + (schedule.minute < 10 ? '0' : '') + schedule.minute + ' ' + schedule.amPm + ' was removed by the admin.',
+    { user: schedule.professorUsername }
+  );
+
+  return true;
 }
 
 function getRoomSince(room) {
@@ -2101,7 +2690,14 @@ function renderUsersTable() {
 
 function renderAdminAssignmentOptions() {
   var professors = getProfessorOptions();
-  var availableRooms = getAvailableRooms();
+  var selectedDate = scheduleDateInput ? scheduleDateInput.value : '';
+  var selectedHour = scheduleHourInput ? scheduleHourInput.value : '';
+  var selectedMinute = scheduleMinuteInput ? scheduleMinuteInput.value : '';
+  var selectedAmPm = scheduleAmPmInput ? scheduleAmPmInput.value : '';
+  var availableRooms = selectedDate
+    ? getAvailableRoomsForSlot(selectedDate, selectedHour, selectedMinute, selectedAmPm)
+    : getAvailableRooms();
+  var previousRoomValue = adminRoomSelect.value;
   var submitButton = adminAssignForm.querySelector('button[type="submit"]');
 
   adminProfessorSelect.innerHTML = professors.length
@@ -2116,9 +2712,38 @@ function renderAdminAssignmentOptions() {
       }).join("")
     : '<option value="">No available rooms</option>';
 
+  if (previousRoomValue && availableRooms.some(function(room) { return String(room.room) === previousRoomValue; })) {
+    adminRoomSelect.value = previousRoomValue;
+  }
+
   adminProfessorSelect.disabled = !professors.length;
   adminRoomSelect.disabled = !availableRooms.length;
   submitButton.disabled = !professors.length || !availableRooms.length;
+}
+
+function populateProfessorReservationRooms() {
+  var roomSelect = document.getElementById('profReqRoom');
+  if (!roomSelect) return;
+  var reqDate = document.getElementById('profReqDate');
+  var reqHour = document.getElementById('profReqHour');
+  var reqMinute = document.getElementById('profReqMin');
+  var reqAmPm = document.getElementById('profReqAmPm');
+  
+  // If date is selected, show rooms available for that exact slot.
+  var availableRooms = (reqDate && reqDate.value)
+    ? getAvailableRoomsForSlot(
+        reqDate.value,
+        reqHour ? reqHour.value : '',
+        reqMinute ? reqMinute.value : '',
+        reqAmPm ? reqAmPm.value : ''
+      )
+    : getAvailableRooms();
+  
+  roomSelect.innerHTML = availableRooms.length
+    ? '<option value="">Choose a room...</option>' + availableRooms.map(function(room) {
+        return '<option value="' + room.room + '">Room ' + room.room + ' (' + (room.capacity || 30) + ' capacity)</option>';
+      }).join("")
+    : '<option value="">No available rooms</option>';
 }
 
 function populateAdminFloorFilter() {
@@ -2154,9 +2779,13 @@ function releaseRoomsForUser(username) {
 
 function syncAllDashboards() {
   renderAdminRooms();
+  renderAdminAssignmentOptions();
   renderUsersTable();
   if (!professorDashboard.classList.contains("hidden") && currentUser && currentUser.role === "Professor") {
     renderProfessorRooms();
+    renderProfessorSchedules();
+    renderProfessorPendingReservations();
+    populateProfessorReservationRooms();
   }
   if (!studentDashboard.classList.contains("hidden")) {
     renderStudentRooms();
@@ -2170,19 +2799,15 @@ function renderAdminRooms() {
 
   // apply status filter
   if (selectedStatus) {
-    var now = Date.now();
     if (selectedStatus === 'available') {
-      roomsToRender = roomsToRender.filter(function(r){
-        return !r.occupiedBy && r.status !== 'occupied' && r.status !== 'reserved' && r.status !== 'maintenance';
-      });
+      roomsToRender = roomsToRender.filter(function(r){ return !r.occupiedBy; });
     } else if (selectedStatus === 'occupied') {
       roomsToRender = roomsToRender.filter(function(r){ return !!r.occupiedBy || r.status === 'occupied'; });
     } else if (selectedStatus === 'reserved') {
       roomsToRender = roomsToRender.filter(function(r){
-        var reservedBySchedule = scheduledCheckins.some(function(s){
+        return scheduledCheckins.some(function(s){
           try { var t = (typeof s.whenTs === 'number') ? s.whenTs : new Date(s.whenTs).getTime(); return s.room === r.room && t > now; } catch (e) { return false; }
         });
-        return r.status === 'reserved' || reservedBySchedule;
       });
     } else if (selectedStatus === 'maintenance') {
       roomsToRender = roomsToRender.filter(function(r){ return r.status === 'maintenance'; });
@@ -2190,21 +2815,16 @@ function renderAdminRooms() {
   }
 
   adminRoomBody.innerHTML = buildSectionRowsFrom(roomsToRender, 4, function(room) {
-    var isOccupied = Boolean(room.occupiedBy) || room.status === 'occupied';
-    var editBtn = '<button class="action-btn" data-admin-action="edit" data-room="' + room.room + '">Edit</button>';
+    var isOccupied = Boolean(room.occupiedBy);
     var actionBtn = isOccupied
       ? '<button class="danger-btn" data-admin-action="release" data-room="' + room.room + '">Force Release</button>'
       : '<span class="action-note">Assign from dropdown</span>';
-    // status class and icon mapping
-    var statusClass = room.status === 'maintenance' ? 'status-inactive' : (room.status === 'reserved' ? 'status-info' : (isOccupied ? 'status-occupied' : 'status-available'));
-    var icon = room.status === 'maintenance' ? '🛠' : (room.status === 'reserved' ? '📅' : (isOccupied ? '👤' : '✔️'));
-    var statusText = getRoomStatus(room);
-    return '<tr data-room="' + room.room + '" class="' + (isOccupied ? "occupied-row" : "") + '">' +
+      return '<tr data-room="' + room.room + '" class="' + (isOccupied ? "occupied-row" : "") + '">' +
       '<td>' + room.room + '</td>' +
-      '<td>' + ('<span class="status-pill ' + statusClass + '" aria-label="' + statusText + '">' + icon + ' ' + statusText + '</span>') + '</td>' +
+      '<td>' + ('<span class="status-pill ' + (isOccupied ? 'status-occupied' : 'status-available') + '" aria-label="' + getRoomStatus(room) + '">' + (isOccupied ? '👤 ' : '✔️ ') + getRoomStatus(room) + '</span>') + '</td>' +
       '<td>' + getOccupantName(room.occupiedBy) + '</td>' +
       '<td>' + (isOccupied ? getRoomSince(room) : '-') + '</td>' +
-      '<td>' + actionBtn + ' ' + editBtn + '</td>' +
+      '<td>' + actionBtn + '</td>' +
       '</tr>';
   });
   renderAdminAssignmentOptions();
@@ -2251,6 +2871,225 @@ function renderProfessorRooms() {
   });
   // update professor-specific stats
   renderProfessorStats();
+  renderProfessorSchedules();
+}
+
+function renderProfessorSchedules() {
+  if (!currentUser || currentUser.role !== "Professor") return;
+  
+  var profScheduledSection = document.getElementById('profScheduledSection');
+  var profScheduledBody = document.getElementById('profScheduledBody');
+  
+  if (!profScheduledSection || !profScheduledBody) return;
+  
+  // Find schedules for current professor
+  var profSchedules = schedules.filter(function(s) { return s.professorUsername === currentUser.username; });
+  
+  if (profSchedules.length === 0) {
+    profScheduledSection.style.display = 'none';
+    return;
+  }
+  
+  profScheduledSection.style.display = 'block';
+  
+  var rows = profSchedules.map(function(sched) {
+    var schedDate = new Date(sched.date);
+    var formattedDate = schedDate.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
+    var timeStr = sched.hour + ':' + (sched.minute < 10 ? '0' : '') + sched.minute + ' ' + sched.amPm;
+    var room = rooms.find(function(r) { return r.room === sched.roomNumber; });
+    var status = room && room.occupiedBy === currentUser.username ? '<span class="status-pill status-available" style="background: rgba(47,143,67,0.12); color: #27773a;">✔️ Scheduled</span>' : '<span class="status-pill status-available" style="background: rgba(47,143,67,0.12); color: #27773a;">📅 Pending</span>';
+    
+    return '<tr class="schedule-row" style="cursor: pointer; transition: background 0.2s;" data-schedule-id="' + sched.id + '" data-room="' + sched.roomNumber + '" data-date="' + sched.date + '" data-hour="' + sched.hour + '" data-minute="' + sched.minute + '" data-ampm="' + sched.amPm + '">' +
+      '<td><strong>Room ' + sched.roomNumber + '</strong></td>' +
+      '<td>' + formattedDate + '</td>' +
+      '<td>' + timeStr + '</td>' +
+      '<td>' + status + '</td>' +
+      '</tr>';
+  }).join("");
+  
+  profScheduledBody.innerHTML = rows;
+  
+  // Add event listeners to schedule rows
+  var scheduleRows = document.querySelectorAll('.schedule-row');
+  scheduleRows.forEach(function(row) {
+    row.addEventListener('click', function() {
+      openScheduleDetailsModal(this);
+    });
+    row.addEventListener('mouseenter', function() {
+      this.style.background = 'rgba(31, 74, 134, 0.08)';
+    });
+    row.addEventListener('mouseleave', function() {
+      this.style.background = 'transparent';
+    });
+  });
+}
+
+function openScheduleDetailsModal(rowElement) {
+  var scheduleId = rowElement.dataset.scheduleId;
+  var roomNumber = parseInt(rowElement.dataset.room);
+  var scheduleDate = rowElement.dataset.date;
+  var hour = rowElement.dataset.hour;
+  var minute = rowElement.dataset.minute;
+  var ampm = rowElement.dataset.ampm;
+  
+  // Find the schedule object
+  var schedule = schedules.find(function(s) { return s.id === scheduleId; });
+  if (!schedule) return;
+  
+  // Find room details
+  var room = rooms.find(function(r) { return r.room === roomNumber; });
+  if (!room) return;
+  
+  // Format date
+  var dateObj = new Date(scheduleDate);
+  var formattedDate = dateObj.toLocaleDateString("en-US", { 
+    weekday: "long",
+    year: "numeric", 
+    month: "long", 
+    day: "numeric" 
+  });
+  
+  // Format time
+  var timeStr = hour + ':' + (minute < 10 ? '0' : '') + minute + ' ' + ampm;
+  
+  // Determine status
+  var statusText = room.occupiedBy === currentUser.username ? '✔️ Scheduled' : '📅 Pending';
+  
+  // Get floor number
+  var floorNumber = Math.ceil(room.floor || 1);
+  
+  // Update modal content
+  document.getElementById('schedDetailRoom').textContent = 'Room ' + roomNumber;
+  document.getElementById('schedDetailDate').textContent = formattedDate;
+  document.getElementById('schedDetailTime').textContent = timeStr;
+  document.getElementById('schedDetailStatus').textContent = statusText;
+  document.getElementById('schedDetailFloor').textContent = 'Floor ' + floorNumber;
+  document.getElementById('schedDetailCapacity').textContent = (room.capacity || 30) + ' Students';
+  
+  // Show modal
+  var modal = document.getElementById('scheduleDetailsModal');
+  modal.classList.remove('hidden');
+  modal.setAttribute('aria-hidden', 'false');
+}
+
+function closeScheduleDetailsModal() {
+  var modal = document.getElementById('scheduleDetailsModal');
+  modal.classList.add('hidden');
+  modal.setAttribute('aria-hidden', 'true');
+}
+
+function renderProfessorPendingReservations() {
+  if (!currentUser || currentUser.role !== "Professor") return;
+  
+  var tbody = document.getElementById('profPendingReservationsBody');
+  var section = document.getElementById('profPendingReservationsBody').closest('#profReservationSection');
+  if (!tbody) return;
+  
+  var profReservations = getProfessorReservations(currentUser.username);
+  
+  // Show only truly pending requests here; approved items belong to Scheduled Rooms.
+  var activeReservations = profReservations.filter(function(r) { return r.status === 'Pending'; });
+  
+  if (activeReservations.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="4" style="text-align: center; color: #6b7280; padding: 20px;">No pending reservations</td></tr>';
+    if (section) {
+      section.style.display = 'none';
+    }
+    return;
+  }
+  
+  if (section) {
+    section.style.display = 'block';
+  }
+
+  var rows = activeReservations.map(function(res) {
+    var resDate = new Date(res.date);
+    var formattedDate = resDate.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
+    var timeStr = res.hour + ':' + (res.minute < 10 ? '0' : '') + res.minute + ' ' + res.amPm;
+    var statusColor = '#f59e0b';
+    var statusIcon = '⏳';
+    
+    return '<tr style="opacity: ' + (res.status === 'Rejected' ? '0.5' : '1') + ';">' +
+      '<td><strong>Room ' + res.roomNumber + '</strong></td>' +
+      '<td>' + formattedDate + '</td>' +
+      '<td>' + timeStr + '</td>' +
+      '<td><span style="color: ' + statusColor + '; font-weight: 600;">' + statusIcon + ' ' + res.status + '</span></td>' +
+      '</tr>';
+  }).join("");
+  
+  tbody.innerHTML = rows;
+}
+
+function renderAdminPendingReservations() {
+  if (!currentUser || currentUser.role !== "Admin") return;
+  
+  var tbody = document.getElementById('adminPendingReservationsBody');
+  if (!tbody) return;
+  
+  // Get only pending reservations
+  var pendingRes = reservations.filter(function(r) { return r.status === 'Pending'; });
+  
+  if (pendingRes.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="7" style="text-align: center; color: #6b7280; padding: 20px;">No pending reservations</td></tr>';
+    return;
+  }
+  
+  var rows = pendingRes.map(function(res) {
+    var resDate = new Date(res.date);
+    var formattedDate = resDate.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
+    var timeStr = res.hour + ':' + (res.minute < 10 ? '0' : '') + res.minute + ' ' + res.amPm;
+    var createdDate = new Date(res.createdAt);
+    var createdStr = createdDate.toLocaleDateString("en-US", { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" });
+    
+    var prof = users.find(function(u) { return u.username === res.professorUsername; });
+    var profName = prof ? getDisplayName(prof) : res.professorUsername;
+    
+    // Check for conflict
+    var hasConflict = hasReservationConflict(res.roomNumber, res.date, res.hour, res.minute, res.amPm);
+    var statusBadge = hasConflict ? '<span style="background: #fee2e2; color: #991b1b; padding: 4px 8px; border-radius: 4px; font-size: 12px; font-weight: 600;">⚠️ Conflict</span>' : '<span style="background: #ecfdf5; color: #065f46; padding: 4px 8px; border-radius: 4px; font-size: 12px; font-weight: 600;">✓ Available</span>';
+    
+    var buttons = '<div style="display: flex; gap: 6px; flex-wrap: wrap;">' +
+      '<button class="accept-reservation" data-res-id="' + res.id + '" style="padding: 6px 12px; background: #10b981; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 12px; font-weight: 600;">Accept</button>' +
+      '<button class="reject-reservation" data-res-id="' + res.id + '" style="padding: 6px 12px; background: #ef4444; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 12px; font-weight: 600;">Reject</button>' +
+      '</div>';
+    
+    return '<tr>' +
+      '<td><strong>' + profName + '</strong></td>' +
+      '<td><strong>Room ' + res.roomNumber + '</strong></td>' +
+      '<td>' + formattedDate + '</td>' +
+      '<td>' + timeStr + '</td>' +
+      '<td style="font-size: 12px; color: #6b7280;">' + createdStr + '</td>' +
+      '<td>' + statusBadge + '</td>' +
+      '<td>' + buttons + '</td>' +
+      '</tr>';
+  }).join("");
+  
+  tbody.innerHTML = rows;
+  
+  // Add event listeners for accept/reject buttons
+  document.querySelectorAll('.accept-reservation').forEach(function(btn) {
+    btn.addEventListener('click', function() {
+      var resId = this.dataset.resId;
+      var res = reservations.find(function(r) { return r.id === resId; });
+      if (res && !hasReservationConflict(res.roomNumber, res.date, res.hour, res.minute, res.amPm)) {
+        approveReservation(resId, currentUser.username);
+        syncAllDashboards();
+      } else {
+        alert('Cannot approve: Room conflict detected!');
+      }
+    });
+  });
+  
+  document.querySelectorAll('.reject-reservation').forEach(function(btn) {
+    btn.addEventListener('click', function() {
+      var resId = this.dataset.resId;
+      var reason = prompt('Enter rejection reason:', 'Room conflict detected');
+      if (reason !== null) {
+        rejectReservation(resId, reason);
+        syncAllDashboards();
+      }
+    });
+  });
 }
 
 function renderAdminStats() {
@@ -2260,6 +3099,12 @@ function renderAdminStats() {
   var occEl = document.getElementById('roomsOccupiedCount');
   if (availEl) availEl.textContent = String(available);
   if (occEl) occEl.textContent = String(occupied);
+  // Reservations count: admin-created schedules + professor requests
+  var reservationsEl = document.getElementById('reservationsCount');
+  if (reservationsEl) {
+    var totalRes = (Array.isArray(schedules) ? schedules.length : 0) + (Array.isArray(reservations) ? reservations.length : 0);
+    reservationsEl.textContent = String(totalRes);
+  }
   // total and utilization
   var total = rooms.length;
   var util = total ? (occupied / total * 100) : 0;
@@ -2270,6 +3115,124 @@ function renderAdminStats() {
   var todays = checkins.filter(function(c) { return c.date === todayKey; }).length;
   var todayEl = document.getElementById('todaysCheckinsCount');
   if (todayEl) todayEl.textContent = String(todays);
+}
+
+function formatScheduleRow(s) {
+  var date = new Date(s.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+  var time = s.hour + ':' + (s.minute < 10 ? '0' : '') + s.minute + ' ' + s.amPm;
+  var prof = getDisplayName(getUserByUsername(s.professorUsername)) || s.professorUsername;
+  return '<tr><td>Room ' + s.roomNumber + '</td><td>' + date + '</td><td>' + time + '</td><td>' + prof + '</td></tr>';
+}
+
+function detectConflictingRequests(roomNumber, date, hour, minute, amPm) {
+  // Count how many pending requests exist for the same room, date, hour, minute, amPm
+  var conflictCount = reservations.filter(function(r) {
+    return r.status === 'Pending' &&
+           r.roomNumber === roomNumber &&
+           r.date === date &&
+           r.hour == hour &&
+           r.minute == minute &&
+           r.amPm === amPm;
+  }).length;
+  return conflictCount > 1;
+}
+
+function formatRequestRowWithActions(r) {
+  var date = new Date(r.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+  var time = r.hour + ':' + (r.minute < 10 ? '0' : '') + r.minute + ' ' + r.amPm;
+  var prof = getDisplayName(getUserByUsername(r.professorUsername)) || r.professorUsername;
+  
+  var hasConflict = detectConflictingRequests(r.roomNumber, r.date, r.hour, r.minute, r.amPm);
+  var conflictBadge = hasConflict ? '<span style="background:#fee2e2;color:#991b1b;padding:2px 6px;border-radius:3px;font-size:11px;font-weight:600;">⚠️ CONFLICT</span>' : '';
+  
+  var statusBadge = '<span style="background:' + (r.status === 'Pending' ? '#fef08a' : (r.status === 'Approved' ? '#d1fae5' : '#fee2e2')) + ';color:' + (r.status === 'Pending' ? '#92400e' : (r.status === 'Approved' ? '#065f46' : '#991b1b')) + ';padding:3px 8px;border-radius:4px;font-size:12px;font-weight:600;">' + r.status + '</span>';
+  
+  var buttons = '';
+  if (r.status === 'Pending') {
+    buttons = '<div style="display:flex;gap:6px;flex-wrap:wrap;">' +
+      '<button class="modal-accept-reservation" data-res-id="' + r.id + '" style="padding:5px 10px;background:#10b981;color:white;border:none;border-radius:3px;cursor:pointer;font-size:11px;font-weight:600;">Accept</button>' +
+      '<button class="modal-reject-reservation" data-res-id="' + r.id + '" style="padding:5px 10px;background:#ef4444;color:white;border:none;border-radius:3px;cursor:pointer;font-size:11px;font-weight:600;">Reject</button>' +
+      '</div>';
+  }
+  
+  return '<tr>' +
+    '<td><strong>Room ' + r.roomNumber + '</strong></td>' +
+    '<td>' + date + '</td>' +
+    '<td>' + time + '</td>' +
+    '<td>' + prof + '</td>' +
+    '<td>' + statusBadge + ' ' + conflictBadge + '</td>' +
+    '<td>' + buttons + '</td>' +
+    '</tr>';
+}
+
+function renderReservationsModal() {
+  var container = document.getElementById('reservationsContent');
+  if (!container) return;
+  var html = '';
+  // Admin schedules
+  html += '<h4>Admin Schedules (Approved)</h4>';
+  if (schedules && schedules.length) {
+    html += '<table style="width:100%;border-collapse:collapse;margin-bottom:12px;font-size:13px;">';
+    html += '<thead><tr style="background:#f3f4f6;"><th style="text-align:left;padding:8px;border-bottom:1px solid #e6e9ef;">Room</th><th style="text-align:left;padding:8px;border-bottom:1px solid #e6e9ef;">Date</th><th style="text-align:left;padding:8px;border-bottom:1px solid #e6e9ef;">Time</th><th style="text-align:left;padding:8px;border-bottom:1px solid #e6e9ef;">Professor</th></tr></thead>';
+    html += '<tbody>' + schedules.map(formatScheduleRow).join('') + '</tbody></table>';
+  } else {
+    html += '<div style="color:#6b7280;padding:8px 0 12px;">No approved schedules.</div>';
+  }
+
+  // Professor requests with approve/reject
+  html += '<h4>Professor Requests</h4>';
+  if (reservations && reservations.length) {
+    html += '<table style="width:100%;border-collapse:collapse;font-size:13px;">';
+    html += '<thead><tr style="background:#f3f4f6;"><th style="text-align:left;padding:8px;border-bottom:1px solid #e6e9ef;">Room</th><th style="text-align:left;padding:8px;border-bottom:1px solid #e6e9ef;">Date</th><th style="text-align:left;padding:8px;border-bottom:1px solid #e6e9ef;">Time</th><th style="text-align:left;padding:8px;border-bottom:1px solid #e6e9ef;">Professor</th><th style="text-align:left;padding:8px;border-bottom:1px solid #e6e9ef;">Status</th><th style="text-align:left;padding:8px;border-bottom:1px solid #e6e9ef;">Action</th></tr></thead>';
+    html += '<tbody>' + reservations.map(formatRequestRowWithActions).join('') + '</tbody></table>';
+  } else {
+    html += '<div style="color:#6b7280;padding:8px 0;">No reservation requests.</div>';
+  }
+
+  container.innerHTML = html;
+  
+  // Wire approve/reject buttons
+  document.querySelectorAll('.modal-accept-reservation').forEach(function(btn) {
+    btn.addEventListener('click', function() {
+      var resId = this.dataset.resId;
+      var res = reservations.find(function(r) { return r.id === resId; });
+      if (res && !hasReservationConflict(res.roomNumber, res.date, res.hour, res.minute, res.amPm)) {
+        approveReservation(resId, currentUser.username);
+        renderReservationsModal();
+        renderAdminStats();
+        syncAllDashboards();
+      } else {
+        alert('Cannot approve: Room conflict detected!');
+      }
+    });
+  });
+  
+  document.querySelectorAll('.modal-reject-reservation').forEach(function(btn) {
+    btn.addEventListener('click', function() {
+      var resId = this.dataset.resId;
+      var reason = prompt('Enter rejection reason:', 'Room conflict detected');
+      if (reason !== null) {
+        rejectReservation(resId, reason);
+        renderReservationsModal();
+        renderAdminStats();
+        syncAllDashboards();
+      }
+    });
+  });
+}
+
+// Wire up stat click to open modal
+var reservationsStat = document.getElementById('reservationsStat');
+var reservationsModal = document.getElementById('reservationsModal');
+var reservationsClose = document.getElementById('reservationsClose');
+if (reservationsStat) {
+  reservationsStat.addEventListener('click', function() {
+    renderReservationsModal();
+    if (reservationsModal) { reservationsModal.classList.remove('hidden'); reservationsModal.setAttribute('aria-hidden','false'); }
+  });
+}
+if (reservationsClose) {
+  reservationsClose.addEventListener('click', function() { if (reservationsModal) { reservationsModal.classList.add('hidden'); reservationsModal.setAttribute('aria-hidden','true'); } });
 }
 
 function renderProfessorStats() {
@@ -2479,6 +3442,11 @@ adminAssignForm.addEventListener("submit", function(event) {
   event.preventDefault();
   var professorUsername = adminProfessorSelect.value;
   var roomNumber = Number(adminRoomSelect.value);
+  var scheduleDate = document.getElementById("scheduleDate").value;
+  var scheduleHour = document.getElementById("scheduleHour").value;
+  var scheduleMinute = document.getElementById("scheduleMinute").value;
+  var scheduleAmPm = document.getElementById("scheduleAmPm").value;
+  
   var selectedProfessor = getUserByUsername(professorUsername);
   var selectedRoom = rooms.find(function(room) { return room.room === roomNumber; });
 
@@ -2504,6 +3472,59 @@ adminAssignForm.addEventListener("submit", function(event) {
     return;
   }
 
+  if (scheduleDate && scheduleHour && scheduleMinute) {
+    // If date provided, ensure time fields are explicitly selected
+    if (!scheduleHour || !scheduleMinute || !scheduleAmPm) {
+      adminAssignError.textContent = 'Please select a valid hour, minute and AM/PM for the scheduled reservation.';
+      adminAssignError.classList.remove('hidden');
+      return;
+    }
+    // Validate date format and range
+    var dateValidation = validateScheduleDate(scheduleDate);
+    if (!dateValidation.valid) {
+      adminAssignError.textContent = "Date validation failed: " + dateValidation.error;
+      adminAssignError.classList.remove("hidden");
+      return;
+    }
+    
+    // Validate time format and values
+    var timeValidation = validateScheduleTime(scheduleHour, scheduleMinute, scheduleAmPm);
+    if (!timeValidation.valid) {
+      adminAssignError.textContent = "Time validation failed: " + timeValidation.error;
+      adminAssignError.classList.remove("hidden");
+      return;
+    }
+
+    // Check for conflicts with existing schedules
+    if (hasReservationConflict(roomNumber, scheduleDate, scheduleHour, scheduleMinute, scheduleAmPm)) {
+      adminAssignError.textContent = "Schedule conflict: Room " + roomNumber + " is already scheduled for this date and time.";
+      adminAssignError.classList.remove("hidden");
+      return;
+    }
+
+    var scheduleObj = {
+      id: 'sched_' + Date.now(),
+      professorUsername: professorUsername,
+      roomNumber: roomNumber,
+      date: scheduleDate,
+      hour: scheduleHour,
+      minute: scheduleMinute,
+      amPm: scheduleAmPm,
+      createdAt: Date.now()
+    };
+    schedules.push(scheduleObj);
+    saveSchedules();
+    notify('Schedule Created', getDisplayName(selectedProfessor) + ' scheduled for Room ' + roomNumber + ' on ' + scheduleDate + ' at ' + scheduleHour + ':' + (scheduleMinute < 10 ? '0' : '') + scheduleMinute + ' ' + scheduleAmPm, { user: professorUsername });
+    
+    // If scheduled for future, room remains available - don't occupy it yet
+    adminAssignForm.reset();
+    saveRooms();
+    announceRoomChange(selectedRoom.room);
+    syncAllDashboards();
+    return;
+  }
+
+  // Only occupy room if NO schedule is provided (immediate assignment)
   releaseRoomsForUser(selectedProfessor.username);
   var prev = selectedRoom.occupiedBy;
   selectedRoom.occupiedBy = selectedProfessor.username;
@@ -2515,41 +3536,6 @@ adminAssignForm.addEventListener("submit", function(event) {
   announceRoomChange(selectedRoom.room);
   syncAllDashboards();
 });
-
-// Edit room modal event handlers
-if (editRoomCloseBtn) editRoomCloseBtn.addEventListener('click', closeEditRoomModal);
-if (editRoomCancelBtn) editRoomCancelBtn.addEventListener('click', closeEditRoomModal);
-if (editRoomForm) {
-  editRoomForm.addEventListener('submit', function(e){
-    e.preventDefault();
-    var rn = Number(editRoomNumber.value);
-    var room = rooms.find(function(r){ return r.room === rn; });
-    if (!room) { closeEditRoomModal(); return; }
-    var prevOcc = room.occupiedBy;
-    var sel = (String(editRoomStatusSelect.value || '')).toLowerCase();
-    if (sel === 'available') {
-      room.status = 'available';
-      if (room.occupiedBy) { recordOccupancyChange(rn, prevOcc, null); }
-      room.occupiedBy = null;
-    } else if (sel === 'occupied') {
-      room.status = 'occupied';
-      // keep occupiedBy unchanged (admin may set occupied state without assigning occupant)
-    } else if (sel === 'reserved') {
-      room.status = 'reserved';
-      if (room.occupiedBy) { recordOccupancyChange(rn, prevOcc, null); }
-      room.occupiedBy = null;
-    } else if (sel === 'maintenance') {
-      room.status = 'maintenance';
-      if (room.occupiedBy) { recordOccupancyChange(rn, prevOcc, null); }
-      room.occupiedBy = null;
-    }
-    try { saveRooms(); saveCheckins(); } catch(e){}
-    announceRoomChange(rn);
-    closeEditRoomModal();
-    syncAllDashboards();
-    notify('Room updated', 'Room ' + rn + ' status set to ' + sel);
-  });
-}
 
 passwordToggles.forEach(function(toggle) {
   toggle.addEventListener("click", function() {
@@ -2706,6 +3692,18 @@ adminRoomBody.addEventListener("click", function(event) {
     // also persist checkins (no-op here but keep consistent)
     saveCheckins();
     announceRoomChange(roomNumber);
+  } else if (action === "remove-reservation") {
+    var schedule = isRoomCurrentlyScheduled(roomNumber);
+    if (!schedule) {
+      notify('No reservation found', 'Room ' + roomNumber + ' does not have a removable reservation.');
+      syncAllDashboards();
+      return;
+    }
+    if (!confirm('Remove the reservation for Room ' + roomNumber + ' on ' + schedule.date + ' at ' + schedule.hour + ':' + (schedule.minute < 10 ? '0' : '') + schedule.minute + ' ' + schedule.amPm + '?')) {
+      return;
+    }
+    removeScheduledReservation(roomNumber);
+    announceRoomChange(roomNumber);
   }
   syncAllDashboards();
 });
@@ -2788,6 +3786,26 @@ if (studentSearch) studentSearch.addEventListener('input', function(){ renderStu
 if (studentHistoryBtn) studentHistoryBtn.addEventListener('click', function(){ renderStudentHistory(); });
 if (studentHistoryClose) studentHistoryClose.addEventListener('click', function(){ if (studentHistoryModal) { studentHistoryModal.classList.add('hidden'); studentHistoryModal.setAttribute('aria-hidden','true'); } });
 populateStudentFloorFilter();
+
+// Schedule details modal handlers
+const scheduleDetailsClose = document.getElementById('scheduleDetailsClose');
+const scheduleDetailsCloseBtn = document.getElementById('scheduleDetailsCloseBtn');
+const scheduleDetailsModal = document.getElementById('scheduleDetailsModal');
+
+if (scheduleDetailsClose) {
+  scheduleDetailsClose.addEventListener('click', closeScheduleDetailsModal);
+}
+if (scheduleDetailsCloseBtn) {
+  scheduleDetailsCloseBtn.addEventListener('click', closeScheduleDetailsModal);
+}
+if (scheduleDetailsModal) {
+  scheduleDetailsModal.addEventListener('click', function(e) {
+    if (e.target === this) {
+      closeScheduleDetailsModal();
+    }
+  });
+}
+
 // Import / Export demo data (localStorage)
 const importFile = document.getElementById('importFile');
 const exportDataBtn = document.getElementById('exportDataBtn');
