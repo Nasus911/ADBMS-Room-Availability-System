@@ -2274,6 +2274,23 @@ let scheduledCheckins = [];
 
 // persistent notifications (per-user)
 let notifications = [];
+let databaseDiagnostics = null;
+
+async function loadDatabaseDiagnostics() {
+  try {
+    var response = await apiRequest('bootstrap');
+    databaseDiagnostics = response && response.database ? response.database : null;
+    if (databaseDiagnostics && !databaseDiagnostics.hasRequiredTables) {
+      var missing = Array.isArray(databaseDiagnostics.missingTables) && databaseDiagnostics.missingTables.length
+        ? databaseDiagnostics.missingTables.join(', ')
+        : 'unknown tables';
+      notify('Database warning', 'Connected database "' + (databaseDiagnostics.database || 'unknown') + '" is missing: ' + missing);
+    }
+  } catch (e) {
+    databaseDiagnostics = null;
+  }
+}
+
 function loadNotifications() {
   return apiRequest('notifications', 'list').then(function(response) {
     if (response && Array.isArray(response.items)) {
@@ -3728,7 +3745,6 @@ userForm.addEventListener("submit", function(event) {
   users.push({ name: fullName, username: normalizedUsername, password: password, role: role, status: "Active", lastLogin: null });
   // persist users immediately so login in other tabs or after reload works
   saveUsers();
-  saveUsers();
   userForm.reset();
   passwordToggles.forEach(function(toggle) { toggle.textContent = "\uD83D\uDC41"; });
   closeUserModal();
@@ -4055,6 +4071,7 @@ function highlightRoomRow(roomNumber) {
 async function initializeApp() {
   try {
     await Promise.all([
+      loadDatabaseDiagnostics(),
       loadRooms(),
       loadCheckins(),
       loadUsers(),

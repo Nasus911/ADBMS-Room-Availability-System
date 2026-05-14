@@ -1,11 +1,5 @@
--- ADBMS MySQL schema for XAMPP
--- The PHP backend bootstraps the same schema automatically if it is missing or incompatible.
-
-CREATE DATABASE IF NOT EXISTS `room_db`
-  CHARACTER SET utf8mb4
-  COLLATE utf8mb4_unicode_ci;
-
-USE `room_db`;
+-- Initial migration: create schema for room_db
+-- This migration is idempotent (uses IF NOT EXISTS) and sets schema version to 2
 
 CREATE TABLE IF NOT EXISTS `schema_version` (
   `id` TINYINT UNSIGNED NOT NULL,
@@ -48,10 +42,7 @@ CREATE TABLE IF NOT EXISTS `checkins` (
   PRIMARY KEY (`id`),
   KEY `idx_checkins_room_number` (`room_number`),
   KEY `idx_checkins_user_username` (`user_username`),
-  CONSTRAINT `fk_checkins_room_number`
-    FOREIGN KEY (`room_number`) REFERENCES `rooms`(`room_number`)
-    ON DELETE CASCADE
-    ON UPDATE CASCADE
+  CONSTRAINT `fk_checkins_room_number` FOREIGN KEY (`room_number`) REFERENCES `rooms` (`room_number`) ON DELETE CASCADE ON UPDATE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE IF NOT EXISTS `schedules` (
@@ -68,10 +59,7 @@ CREATE TABLE IF NOT EXISTS `schedules` (
   PRIMARY KEY (`id`),
   KEY `idx_schedules_professor_username` (`professor_username`),
   KEY `idx_schedules_room_number` (`room_number`),
-  CONSTRAINT `fk_schedules_room_number`
-    FOREIGN KEY (`room_number`) REFERENCES `rooms`(`room_number`)
-    ON DELETE CASCADE
-    ON UPDATE CASCADE
+  CONSTRAINT `fk_schedules_room_number` FOREIGN KEY (`room_number`) REFERENCES `rooms` (`room_number`) ON DELETE CASCADE ON UPDATE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE IF NOT EXISTS `reservations` (
@@ -92,10 +80,7 @@ CREATE TABLE IF NOT EXISTS `reservations` (
   KEY `idx_reservations_professor_username` (`professor_username`),
   KEY `idx_reservations_room_number` (`room_number`),
   KEY `idx_reservations_responded_by_username` (`responded_by_username`),
-  CONSTRAINT `fk_reservations_room_number`
-    FOREIGN KEY (`room_number`) REFERENCES `rooms`(`room_number`)
-    ON DELETE CASCADE
-    ON UPDATE CASCADE
+  CONSTRAINT `fk_reservations_room_number` FOREIGN KEY (`room_number`) REFERENCES `rooms` (`room_number`) ON DELETE CASCADE ON UPDATE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE IF NOT EXISTS `notifications` (
@@ -118,3 +103,5 @@ SELECT
   COUNT(*) AS total_rooms
 FROM rooms;
 
+-- mark schema version
+REPLACE INTO schema_version (id, version) VALUES (1, 2);

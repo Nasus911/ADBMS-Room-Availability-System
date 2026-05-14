@@ -3,13 +3,61 @@ declare(strict_types=1);
 
 function adbms_config(): array
 {
+    adbms_load_dotenv(__DIR__ . '/.env');
+
     return [
-        'host' => '127.0.0.1',
-        'port' => 3306,
-        'database' => 'adbms',
-        'username' => 'root',
-        'password' => '',
+        'host' => adbms_env('DB_HOST', '127.0.0.1'),
+        'port' => (int) adbms_env('DB_PORT', '3306'),
+        'database' => adbms_env('DB_DATABASE', 'room_db'),
+        'username' => adbms_env('DB_USERNAME', 'root'),
+        'password' => adbms_env('DB_PASSWORD', ''),
     ];
+}
+
+function adbms_env(string $name, string $default = ''): string
+{
+    $value = getenv($name);
+    if ($value === false) {
+        return $default;
+    }
+
+    $trimmed = trim((string) $value);
+    return $trimmed === '' ? $default : $trimmed;
+}
+
+function adbms_load_dotenv(string $path): void
+{
+    static $loaded = false;
+
+    if ($loaded || !is_file($path) || !is_readable($path)) {
+        return;
+    }
+
+    $lines = file($path, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
+    if ($lines === false) {
+        return;
+    }
+
+    foreach ($lines as $line) {
+        $line = trim($line);
+        if ($line === '' || str_starts_with($line, '#') || !str_contains($line, '=')) {
+            continue;
+        }
+
+        [$key, $value] = array_map('trim', explode('=', $line, 2));
+        if ($key === '') {
+            continue;
+        }
+
+        $value = trim($value, "\"'");
+        if (getenv($key) === false) {
+            putenv($key . '=' . $value);
+            $_ENV[$key] = $value;
+            $_SERVER[$key] = $value;
+        }
+    }
+
+    $loaded = true;
 }
 
 function adbms_connect(): PDO
@@ -36,22 +84,8 @@ function adbms_connect(): PDO
 
     $pdo = new PDO($baseDsn . ';dbname=' . $config['database'], $config['username'], $config['password'], $options);
 
-    $currentVersion = 0;
-    try {
-        $currentVersion = (int) ($pdo->query('SELECT version FROM schema_version WHERE id = 1')->fetchColumn() ?: 0);
-    } catch (Throwable $e) {
-        $currentVersion = 0;
-    }
-
-    if ($currentVersion !== 2) {
-        $server->exec(sprintf('DROP DATABASE IF EXISTS `%s`', $config['database']));
-        $server->exec(sprintf(
-            'CREATE DATABASE `%s` CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci',
-            $config['database']
-        ));
-        $pdo = new PDO($baseDsn . ';dbname=' . $config['database'], $config['username'], $config['password'], $options);
-    }
-
+    // Run non-destructive, versioned migrations instead of dropping the database.
+    adbms_run_migrations($pdo);
     adbms_ensure_schema($pdo);
     adbms_seed_data($pdo);
 
@@ -68,11 +102,6 @@ function adbms_ensure_schema(PDO $pdo): void
             PRIMARY KEY (`id`)
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci"
     );
-
-    $currentVersion = (int) ($pdo->query('SELECT version FROM schema_version WHERE id = 1')->fetchColumn() ?: 0);
-    if ($currentVersion !== 2) {
-        adbms_drop_schema($pdo);
-    }
 
     $pdo->exec(
         "CREATE TABLE IF NOT EXISTS `users` (
@@ -188,6 +217,134 @@ function adbms_drop_schema(PDO $pdo): void
     $pdo->exec('SET FOREIGN_KEY_CHECKS = 1');
 }
 
+function adbms_ensure_migrations_table(PDO $pdo): void
+{
+    $pdo->exec(
+        "CREATE TABLE IF NOT EXISTS `migrations` (
+            `id` VARCHAR(255) NOT NULL,
+            `applied_at` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+            `checksum` CHAR(64) DEFAULT NULL,
+            `file_size` BIGINT DEFAULT NULL,
+            PRIMARY KEY (`id`)
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci"
+    );
+
+    // Attempt to add columns if older migrations table exists without them
+    try {
+        $pdo->exec("ALTER TABLE migrations ADD COLUMN IF NOT EXISTS checksum CHAR(64) DEFAULT NULL");
+        $pdo->exec("ALTER TABLE migrations ADD COLUMN IF NOT EXISTS file_size BIGINT DEFAULT NULL");
+    } catch (Throwable $_) {
+        // Ignore; ALTER may not support IF NOT EXISTS on older MySQL
+    }
+}
+
+function adbms_get_migration_files(): array
+{
+    $dir = __DIR__ . '/migrations';
+    if (!is_dir($dir)) {
+        return [];
+    }
+
+    $files = glob($dir . '/*.sql');
+    if ($files === false) {
+        return [];
+    }
+
+    sort($files, SORT_STRING);
+    return array_map(function ($path) {
+        return basename($path);
+    }, $files);
+}
+
+function adbms_get_applied_migrations(PDO $pdo): array
+{
+    try {
+        $stmt = $pdo->query('SELECT id, checksum, file_size FROM migrations ORDER BY applied_at');
+        $rows = $stmt ? $stmt->fetchAll(PDO::FETCH_ASSOC) : [];
+        $out = [];
+        foreach ($rows as $r) {
+            $out[$r['id']] = [
+                'checksum' => $r['checksum'] ?? null,
+                'file_size' => isset($r['file_size']) ? (int) $r['file_size'] : null,
+            ];
+        }
+        return $out;
+    } catch (Throwable $e) {
+        return [];
+    }
+}
+
+function adbms_apply_migration(PDO $pdo, string $migrationFile): void
+{
+    $path = __DIR__ . '/migrations/' . $migrationFile;
+    if (!is_file($path) || !is_readable($path)) {
+        throw new RuntimeException('Migration file not found: ' . $migrationFile);
+    }
+
+    $sql = file_get_contents($path);
+    if ($sql === false) {
+        throw new RuntimeException('Unable to read migration file: ' . $migrationFile);
+    }
+    // Compute checksum and file size
+    $checksum = hash('sha256', $sql);
+    $fileSize = filesize($path);
+
+    // Execute full SQL file. PDO->exec will run multiple statements where supported.
+    $pdo->exec($sql);
+
+    $stmt = $pdo->prepare('REPLACE INTO migrations (id, checksum, file_size) VALUES (:id, :checksum, :file_size)');
+    $stmt->execute([':id' => $migrationFile, ':checksum' => $checksum, ':file_size' => $fileSize]);
+}
+
+function adbms_run_migrations(PDO $pdo): void
+{
+    adbms_ensure_migrations_table($pdo);
+
+    // Auto-migrate is disabled by default for web requests. Set ADBMS_AUTO_MIGRATE=1 to opt in.
+    $auto = adbms_env('ADBMS_AUTO_MIGRATE', '0');
+    if (PHP_SAPI !== 'cli' && ($auto === '' || $auto === '0')) {
+        return;
+    }
+
+    $all = adbms_get_migration_files();
+    $applied = adbms_get_applied_migrations($pdo);
+
+    // Acquire advisory lock to avoid concurrent migrations
+    $lockName = 'adbms_migrations_lock';
+    $gotLock = false;
+    try {
+        $stmt = $pdo->query("SELECT GET_LOCK('{$lockName}', 10)");
+        $gotLock = (bool) ($stmt ? $stmt->fetchColumn() : false);
+        if (!$gotLock) {
+            throw new RuntimeException('Could not acquire migration lock');
+        }
+
+        foreach ($all as $file) {
+            if (isset($applied[$file])) {
+                // verify checksum to detect tampering
+                $path = __DIR__ . '/migrations/' . $file;
+                $sql = file_get_contents($path);
+                $checksum = $sql === false ? null : hash('sha256', $sql);
+                $size = is_file($path) ? filesize($path) : null;
+                if ($checksum !== null && $applied[$file]['checksum'] !== null && $checksum !== $applied[$file]['checksum']) {
+                    throw new RuntimeException('Migration file changed after applied: ' . $file);
+                }
+                continue;
+            }
+
+            // apply migration (no transaction for DDL)
+            adbms_apply_migration($pdo, $file);
+        }
+    } finally {
+        if ($gotLock) {
+            try {
+                $pdo->query("SELECT RELEASE_LOCK('{$lockName}')");
+            } catch (Throwable $_) {
+            }
+        }
+    }
+}
+
 function adbms_seed_data(PDO $pdo): void
 {
     $userCount = (int) $pdo->query('SELECT COUNT(*) AS c FROM users')->fetchColumn();
@@ -243,6 +400,39 @@ function adbms_bootstrap_state(PDO $pdo): array
         'schedules' => adbms_fetch_schedules($pdo),
         'reservations' => adbms_fetch_reservations($pdo),
         'notifications' => adbms_fetch_notifications($pdo),
+    ];
+}
+
+function adbms_database_diagnostics(PDO $pdo): array
+{
+    $databaseName = (string) ($pdo->query('SELECT DATABASE()')->fetchColumn() ?: '');
+    $tables = [];
+
+    if ($databaseName !== '') {
+        $stmt = $pdo->prepare(
+            'SELECT table_name FROM information_schema.tables WHERE table_schema = :schema ORDER BY table_name'
+        );
+        $stmt->execute([':schema' => $databaseName]);
+        $tables = $stmt->fetchAll(PDO::FETCH_COLUMN) ?: [];
+    }
+
+    $schemaVersion = null;
+    try {
+        $schemaVersion = (int) ($pdo->query('SELECT version FROM schema_version WHERE id = 1')->fetchColumn() ?: 0);
+    } catch (Throwable $e) {
+        $schemaVersion = null;
+    }
+
+    $requiredTables = ['schema_version', 'users', 'rooms', 'checkins', 'schedules', 'reservations', 'notifications'];
+    $missingTables = array_values(array_diff($requiredTables, $tables));
+
+    return [
+        'database' => $databaseName,
+        'tableCount' => count($tables),
+        'tables' => $tables,
+        'missingTables' => $missingTables,
+        'hasRequiredTables' => count($missingTables) === 0,
+        'schemaVersion' => $schemaVersion,
     ];
 }
 
@@ -397,6 +587,16 @@ function adbms_normalize_datetime($value): ?string
         return null;
     }
 
+    // Accept numeric timestamps (milliseconds or seconds) sent from JS clients
+    if (is_numeric($normalized)) {
+        $n = (int) $normalized;
+        // If looks like milliseconds (greater than year 3000 in seconds), convert
+        if ($n > 10000000000) {
+            $n = (int) floor($n / 1000);
+        }
+        return date('Y-m-d H:i:s', $n);
+    }
+
     $timestamp = strtotime($normalized);
     if ($timestamp === false) {
         return $normalized;
@@ -410,6 +610,15 @@ function adbms_normalize_date($value): ?string
     $normalized = adbms_normalize_string($value);
     if ($normalized === null) {
         return null;
+    }
+
+    // Accept numeric timestamps (milliseconds or seconds)
+    if (is_numeric($normalized)) {
+        $n = (int) $normalized;
+        if ($n > 10000000000) {
+            $n = (int) floor($n / 1000);
+        }
+        return date('Y-m-d', $n);
     }
 
     $timestamp = strtotime($normalized);

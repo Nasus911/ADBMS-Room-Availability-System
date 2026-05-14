@@ -24,6 +24,7 @@ try {
         adbms_respond([
             'success' => true,
             'data' => adbms_bootstrap_state($pdo),
+            'database' => adbms_database_diagnostics($pdo),
         ]);
     }
 
