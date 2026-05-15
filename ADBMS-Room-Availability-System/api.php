@@ -1,11 +1,28 @@
 <?php
 declare(strict_types=1);
 
+// Suppress all warnings and errors to prevent them from interfering with JSON output
+error_reporting(0);
+ini_set('display_errors', '0');
+ini_set('display_startup_errors', '0');
+
+// Start output buffering to capture any accidental output
+ob_start();
+
 require_once __DIR__ . '/db.php';
 
+// Ensure session is started so API handlers can read authenticated user info
+if (session_status() !== PHP_SESSION_ACTIVE) {
+    @session_start();  // Suppress warnings if headers already sent
+}
+
+// Set JSON headers
 header('Content-Type: application/json; charset=utf-8');
 header('Cache-Control: no-store, no-cache, must-revalidate, max-age=0');
 header('Pragma: no-cache');
+
+// Clear any buffered output to ensure clean JSON response
+ob_end_clean();
 
 function adbms_respond(array $payload, int $statusCode = 200): void
 {
@@ -41,9 +58,14 @@ try {
             adbms_respond(['success' => false, 'error' => 'Username and password are required.'], 422);
         }
 
+        $user = adbms_authenticate($pdo, $username, $password);
+        // Store authenticated user in session for attribution in activity logs
+        if (session_status() === PHP_SESSION_ACTIVE) {
+            $_SESSION['user'] = $user;
+        }
         adbms_respond([
             'success' => true,
-            'user' => adbms_authenticate($pdo, $username, $password),
+            'user' => $user,
         ]);
     }
 

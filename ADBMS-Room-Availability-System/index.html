@@ -1377,7 +1377,6 @@ select {
               <button class="nav-item active" data-admin-view="dashboard">&#127968; Dashboard</button>
               <button class="nav-item" data-admin-view="manage">&#128101; Manage Users</button>
               <button class="nav-item" data-admin-view="reports">&#128232; Reports</button>
-              <button class="nav-item" data-admin-view="history">&#128221; History Logs</button>
               <button class="nav-item" data-admin-view="settings">&#9881; Settings</button>
               <button id="adminLogoutBtn" class="nav-item">&#8617; Log Out</button>
             </aside>
@@ -1526,86 +1525,86 @@ select {
               <div id="adminViewReports" class="view hidden">
                 <h1>Reports</h1>
                 <div class="panel">
-                  <p>Room activity report view is ready for backend integration.</p>
-                </div>
-              </div>
-
-              <div id="adminViewHistory" class="view hidden">
-                <h1>Activity History & Audit Trail</h1>
-                <div class="panel">
-                  <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px; margin-bottom: 20px;">
-                    <div style="display: grid; gap: 6px;">
-                      <label for="historyDateFrom" style="font-weight: 700; color: rgba(237, 245, 255, 0.9); font-size: 13px;">From Date</label>
-                      <input type="date" id="historyDateFrom" style="padding: 8px 10px; border-radius: 6px; border: 1px solid #cdd2dc;" />
-                    </div>
-                    <div style="display: grid; gap: 6px;">
-                      <label for="historyDateTo" style="font-weight: 700; color: rgba(237, 245, 255, 0.9); font-size: 13px;">To Date</label>
-                      <input type="date" id="historyDateTo" style="padding: 8px 10px; border-radius: 6px; border: 1px solid #cdd2dc;" />
-                    </div>
-                    <div style="display: grid; gap: 6px;">
-                      <label for="historyActionType" style="font-weight: 700; color: rgba(237, 245, 255, 0.9); font-size: 13px;">Action Type</label>
-                      <select id="historyActionType" style="padding: 8px 10px; border-radius: 6px; border: 1px solid #cdd2dc;">
-                        <option value="">All Actions</option>
-                        <option value="CREATE">Create</option>
-                        <option value="UPDATE">Update</option>
-                        <option value="DELETE">Delete</option>
-                        <option value="LOGIN">Login</option>
-                        <option value="LOGOUT">Logout</option>
-                        <option value="ASSIGN">Assign</option>
-                        <option value="REASSIGN">Reassign</option>
-                        <option value="APPROVE">Approve</option>
-                        <option value="REJECT">Reject</option>
-                      </select>
-                    </div>
-                    <div style="display: grid; gap: 6px;">
-                      <label for="historyTable" style="font-weight: 700; color: rgba(237, 245, 255, 0.9); font-size: 13px;">Entity/Module</label>
-                      <select id="historyTable" style="padding: 8px 10px; border-radius: 6px; border: 1px solid #cdd2dc;">
-                        <option value="">All Modules</option>
-                        <option value="users">Users</option>
-                        <option value="rooms">Rooms</option>
-                        <option value="schedules">Schedules</option>
-                        <option value="reservations">Reservations</option>
-                        <option value="checkins">Check-ins</option>
-                      </select>
-                    </div>
-                    <div style="display: grid; gap: 6px;">
-                      <label for="historySearch" style="font-weight: 700; color: rgba(237, 245, 255, 0.9); font-size: 13px;">Search</label>
-                      <input type="text" id="historySearch" placeholder="Search by record, user, or description" style="padding: 8px 10px; border-radius: 6px; border: 1px solid #cdd2dc;" />
-                    </div>
-                    <div style="display: flex; gap: 6px; align-items: flex-end;">
-                      <button id="historyFilterBtn" class="primary" style="flex: 1;">Filter</button>
-                      <button id="historyExportBtn" class="secondary" title="Export logs as CSV">📥 Export</button>
-                    </div>
-                  </div>
-                  
-                  <div id="historyStats" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 12px; margin-bottom: 20px;">
-                    <div style="background: rgba(255,255,255,0.05); padding: 12px; border-radius: 8px; text-align: center;">
-                      <div style="font-size: 12px; color: rgba(237,245,255,0.7); margin-bottom: 4px;">Total Logs</div>
-                      <div id="historyTotalCount" style="font-size: 20px; font-weight: 700; color: #ffc844;">0</div>
-                    </div>
+                  <div style="display:flex; gap:10px; flex-wrap:wrap; margin-bottom:16px;">
+                    <button type="button" id="reportTabOverview" class="primary">Room Activity Report</button>
+                    <button type="button" id="reportTabHistory" class="secondary">History Logs</button>
                   </div>
 
-                  <div class="table-scroll">
-                    <table id="historyTable_">
-                      <thead>
-                        <tr>
-                          <th>Timestamp</th>
-                          <th>User/Actor</th>
-                          <th>Action</th>
-                          <th>Module/Entity</th>
-                          <th>Record ID</th>
-                          <th>Description</th>
-                          <th>Details</th>
-                        </tr>
-                      </thead>
-                      <tbody id="historyBody"></tbody>
-                    </table>
+                  <div id="reportOverviewPanel">
+                    <p>Room activity report view is ready for backend integration.</p>
                   </div>
 
-                  <div style="display: flex; gap: 10px; justify-content: center; align-items: center; margin-top: 16px;">
-                    <button id="historyPrevBtn" class="secondary" style="padding: 8px 12px;">← Previous</button>
-                    <span id="historyPageInfo" style="color: rgba(237,245,255,0.9); font-weight: 600;">Page 1</span>
-                    <button id="historyNextBtn" class="secondary" style="padding: 8px 12px;">Next →</button>
+                  <div id="reportHistoryPanel" class="hidden">
+                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px; margin-bottom: 20px;">
+                      <div style="display: grid; gap: 6px;">
+                        <label for="historyDateFrom" style="font-weight: 700; color: rgba(237, 245, 255, 0.9); font-size: 13px;">From Date</label>
+                        <input type="date" id="historyDateFrom" style="padding: 8px 10px; border-radius: 6px; border: 1px solid #cdd2dc;" />
+                      </div>
+                      <div style="display: grid; gap: 6px;">
+                        <label for="historyDateTo" style="font-weight: 700; color: rgba(237, 245, 255, 0.9); font-size: 13px;">To Date</label>
+                        <input type="date" id="historyDateTo" style="padding: 8px 10px; border-radius: 6px; border: 1px solid #cdd2dc;" />
+                      </div>
+                      <div style="display: grid; gap: 6px;">
+                        <label for="historyActionType" style="font-weight: 700; color: rgba(237, 245, 255, 0.9); font-size: 13px;">Action Type</label>
+                        <select id="historyActionType" style="padding: 8px 10px; border-radius: 6px; border: 1px solid #cdd2dc;">
+                          <option value="">All Actions</option>
+                          <option value="CREATE">Create</option>
+                          <option value="UPDATE">Update</option>
+                          <option value="DELETE">Delete</option>
+                          <option value="LOGIN">Login</option>
+                          <option value="LOGOUT">Logout</option>
+                          <option value="ASSIGN">Assign</option>
+                          <option value="REASSIGN">Reassign</option>
+                          <option value="APPROVE">Approve</option>
+                          <option value="REJECT">Reject</option>
+                        </select>
+                      </div>
+                      <div style="display: grid; gap: 6px;">
+                        <label for="historyTable" style="font-weight: 700; color: rgba(237, 245, 255, 0.9); font-size: 13px;">Entity/Module</label>
+                        <select id="historyTable" style="padding: 8px 10px; border-radius: 6px; border: 1px solid #cdd2dc;">
+                          <option value="">All Modules</option>
+                          <option value="users">Users</option>
+                          <option value="rooms">Rooms</option>
+                          <option value="schedules">Schedules</option>
+                          <option value="reservations">Reservations</option>
+                          <option value="checkins">Check-ins</option>
+                        </select>
+                      </div>
+                      <div style="display: grid; gap: 6px;">
+                        <label for="historySearch" style="font-weight: 700; color: rgba(237, 245, 255, 0.9); font-size: 13px;">Search</label>
+                        <input type="text" id="historySearch" placeholder="Search by record, user, or description" style="padding: 8px 10px; border-radius: 6px; border: 1px solid #cdd2dc;" />
+                      </div>
+                      <div style="display: flex; gap: 6px; align-items: flex-end;">
+                        <button id="historyFilterBtn" class="primary" style="flex: 1;">Filter</button>
+                        <button id="historyExportBtn" class="secondary" title="Export logs as CSV">📥 Export</button>
+                      </div>
+                    </div>
+                    <div style="margin-bottom: 12px; color: rgba(237, 245, 255, 0.9); font-weight: 700;">
+                      Total Logs: <span id="historyTotalCount">0</span>
+                    </div>
+                    <div class="table-scroll">
+                      <table id="historyTableView">
+                        <thead>
+                          <tr>
+                            <th>Timestamp</th>
+                            <th>User / Actor</th>
+                            <th>Action</th>
+                            <th>Module</th>
+                            <th>Record ID</th>
+                            <th>Description</th>
+                            <th>Details</th>
+                          </tr>
+                        </thead>
+                        <tbody id="historyBody"></tbody>
+                      </table>
+                    </div>
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 14px; gap: 12px; flex-wrap: wrap;">
+                      <div id="historyPageInfo" style="font-weight: 700; color: rgba(237, 245, 255, 0.9);">Page 1 of 1</div>
+                      <div style="display: flex; gap: 8px;">
+                        <button id="historyPrevBtn" class="secondary">Previous</button>
+                        <button id="historyNextBtn" class="secondary">Next</button>
+                      </div>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -1684,85 +1683,16 @@ select {
             <form id="userForm" class="modal-body">
               <input type="text" id="fullName" placeholder="Full Name" required pattern="[A-Za-z \u00C0-\u017F]+" title="Only letters and spaces allowed" />
               <input type="text" id="username" placeholder="Username" required />
-              <div class="password-field">
                 <input type="password" id="password" placeholder="Password" required />
                 <button type="button" class="toggle-password" data-toggle-password="password" aria-label="Show password">&#128065;</button>
-              </div>
-              <div class="password-field">
-                <input type="password" id="confirmPassword" placeholder="Confirm Password" required />
-                <button type="button" class="toggle-password" data-toggle-password="confirmPassword" aria-label="Show confirm password">&#128065;</button>
-              </div>
-              <label for="roleSelect">Role:</label>
-              <select id="roleSelect" required>
-                <option value="Professor">Professor</option>
-                <option value="Student">Student</option>
-                <option value="Admin">Admin</option>
-              </select>
-              <p id="userFormError" class="form-error hidden"></p>
-              <div class="form-actions">
-                <button type="submit" class="primary">Add User</button>
-                <button type="button" id="cancelModalBtn" class="secondary">Cancel</button>
+              <div style="display:flex; gap:10px; justify-content:flex-end; width:100%; margin-top:12px;">
+                <button id="cancelModalBtn" type="button" class="secondary">Cancel</button>
+                <button type="submit" class="primary">Save User</button>
               </div>
             </form>
           </div>
         </div>
-        <div id="editUserModal" class="modal hidden" aria-hidden="true">
-          <div class="modal-card">
-            <div class="modal-head">
-              <h3>Edit User</h3>
-              <button id="editCloseBtn" class="ghost" type="button">&#10005;</button>
-            </div>
-            <form id="editUserForm" class="modal-body">
-              <input type="text" id="editFullName" placeholder="Full Name" required pattern="[A-Za-z \u00C0-\u017F]+" title="Only letters and spaces allowed" />
-              <input type="text" id="editUsername" placeholder="Username" required />
-              <input type="hidden" id="editOriginalUsername" />
-              <label for="editRoleSelect">Role:</label>
-              <select id="editRoleSelect" required>
-                <option value="Professor">Professor</option>
-                <option value="Student">Student</option>
-                <option value="Admin">Admin</option>
-              </select>
-              <label for="editStatusSelect">Status:</label>
-              <select id="editStatusSelect" required>
-                <option value="Active">Active</option>
-                <option value="Inactive">Inactive</option>
-              </select>
-              <p id="editUserError" class="form-error hidden"></p>
-              <div class="form-actions">
-                <button type="submit" class="primary">Save Changes</button>
-                <button type="button" id="editCancelBtn" class="secondary">Cancel</button>
-              </div>
-            </form>
-          </div>
-        </div>
-        <div id="editRoomModal" class="modal hidden" aria-hidden="true">
-          <div class="modal-card">
-            <div class="modal-head">
-              <h3>Edit Room Status</h3>
-              <button id="editRoomCloseBtn" class="ghost" type="button">✕</button>
-            </div>
-            <form id="editRoomForm" class="modal-body">
-              <input type="hidden" id="editRoomNumber" />
-              <label for="editRoomStatusSelect">Status:</label>
-              <select id="editRoomStatusSelect" required>
-                <option value="available">Available</option>
-                <option value="reserved">Reserved</option>
-                <option value="maintenance">Maintenance</option>
-              </select>
-              <p id="editRoomError" class="form-error hidden"></p>
-              <div class="form-actions">
-                <button type="submit" id="editRoomSaveBtn" class="primary">Save</button>
-                <button type="button" id="editRoomCancelBtn" class="secondary">Cancel</button>
-              </div>
-            </form>
-          </div>
-        </div>
-        <div id="studentHistoryModal" class="modal hidden" aria-hidden="true">
-          <div class="modal-card">
-            <div class="modal-head">
-              <h3>Recent Check-ins</h3>
-              <button id="studentHistoryClose" class="ghost" type="button">✕</button>
-            </div>
+
             <div class="modal-body" style="max-height:60vh;overflow:auto;padding:12px;">
               <!-- populated dynamically -->
             </div>
@@ -2651,6 +2581,10 @@ const adminViews = {
   reports: document.getElementById("adminViewReports"),
   settings: document.getElementById("adminViewSettings"),
 };
+const reportTabOverview = document.getElementById("reportTabOverview");
+const reportTabHistory = document.getElementById("reportTabHistory");
+const reportOverviewPanel = document.getElementById("reportOverviewPanel");
+const reportHistoryPanel = document.getElementById("reportHistoryPanel");
 
 const addUserModal = document.getElementById("addUserModal");
 const openModalBtn = document.getElementById("openModalBtn");
@@ -2818,6 +2752,26 @@ function switchAdminView(view) {
   navItems.forEach(function(item) {
     item.classList.toggle("active", item.dataset.adminView === view);
   });
+
+  if (view === 'reports') {
+    switchReportTab('overview');
+  }
+}
+
+function switchReportTab(tab) {
+  if (reportOverviewPanel && reportHistoryPanel) {
+    reportOverviewPanel.classList.toggle('hidden', tab !== 'overview');
+    reportHistoryPanel.classList.toggle('hidden', tab !== 'history');
+  }
+
+  if (reportTabOverview && reportTabHistory) {
+    reportTabOverview.className = tab === 'overview' ? 'primary' : 'secondary';
+    reportTabHistory.className = tab === 'history' ? 'primary' : 'secondary';
+  }
+
+  if (tab === 'history' && historyTotalCount === 0) {
+    loadActivityLogs();
+  }
 }
 
 function getProfessorOptions() {
@@ -3722,8 +3676,12 @@ navItems.forEach(function(item) {
 openModalBtn.addEventListener("click", openUserModal);
 closeModalBtn.addEventListener("click", closeUserModal);
 cancelModalBtn.addEventListener("click", closeUserModal);
-editCloseBtn.addEventListener("click", closeEditUserModal);
-editCancelBtn.addEventListener("click", closeEditUserModal);
+if (editCloseBtn) {
+  editCloseBtn.addEventListener("click", closeEditUserModal);
+}
+if (editCancelBtn) {
+  editCancelBtn.addEventListener("click", closeEditUserModal);
+}
 
 adminAssignForm.addEventListener("submit", function(event) {
   event.preventDefault();
@@ -3890,13 +3848,14 @@ userForm.addEventListener("submit", function(event) {
   }
 });
 
-editUserForm.addEventListener("submit", function(event) {
-  event.preventDefault();
-  var fullName = editFullName.value.trim();
-  var username = editUsername.value.trim();
-  var role = editRoleSelect.value;
-  var status = editStatusSelect.value;
-  var originalUsername = editOriginalUsername.value;
+if (editUserForm) {
+  editUserForm.addEventListener("submit", function(event) {
+    event.preventDefault();
+    var fullName = editFullName.value.trim();
+    var username = editUsername.value.trim();
+    var role = editRoleSelect.value;
+    var status = editStatusSelect.value;
+    var originalUsername = editOriginalUsername.value;
 
   editUserError.textContent = "";
   editUserError.classList.add("hidden");
@@ -3950,9 +3909,10 @@ editUserForm.addEventListener("submit", function(event) {
   saveRooms();
   saveCheckins();
   saveNotifications();
-  closeEditUserModal();
-  syncAllDashboards();
-});
+    closeEditUserModal();
+    syncAllDashboards();
+  });
+}
 
 adminRoomBody.addEventListener("click", function(event) {
   var target = event.target;
@@ -4243,7 +4203,28 @@ async function loadActivityLogs(filters = {}) {
       headers: { 'Content-Type': 'application/json' },
     });
     
-    const data = await response.json();
+    // Check response status and content type
+    if (!response.ok) {
+      throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+    }
+    
+    const contentType = response.headers.get('content-type');
+    const responseText = await response.text();
+    
+    // If response is not JSON, log and show the raw response
+    if (!contentType || !contentType.includes('application/json')) {
+      console.error('API returned non-JSON response:', responseText.substring(0, 300));
+      throw new Error('API returned non-JSON content. Check browser console for details.');
+    }
+    
+    let data;
+    try {
+      data = JSON.parse(responseText);
+    } catch (parseError) {
+      console.error('Failed to parse JSON:', parseError, 'Response:', responseText.substring(0, 500));
+      throw new Error('Invalid JSON response from API. Check browser console.');
+    }
+    
     if (!data.success) throw new Error(data.error || 'Failed to load logs');
     
     historyTotalCount = data.total;
@@ -4272,7 +4253,19 @@ function renderHistoryLogs(logs) {
     const actionType = log.action_type || '-';
     const table = log.affected_table || '-';
     const recordId = log.affected_record_id || '-';
-    const description = log.description || '-';
+    let description = log.description || '-';
+    // If the log contains a newValue with a professor assignment, surface it
+    try {
+      if (log.newValue && (log.newValue.professor_username || log.newValue.professorUsername)) {
+        const prof = log.newValue.professor_username || log.newValue.professorUsername;
+        description = (description === '-' ? '' : description + ' — ') + `Assigned professor: ${prof}`;
+      } else if (log.changes && (log.changes.professor_username || log.changes.professorUsername)) {
+        const profChange = log.changes.professor_username || log.changes.professorUsername;
+        description = (description === '-' ? '' : description + ' — ') + `Assigned professor: ${profChange.new}`;
+      }
+    } catch (e) {
+      // ignore
+    }
     
     row.innerHTML = `
       <td>${timestamp}</td>
@@ -4379,7 +4372,29 @@ function exportHistoryLogsAsCSV() {
   
   // Fetch all logs for export (should ideally be paginated in backend)
   fetch(`${apiUrl('activity_logs', 'list')}?limit=5000&offset=0&${new URLSearchParams(filters).toString()}`)
-    .then(r => r.json())
+    .then(async r => {
+      if (!r.ok) {
+        throw new Error(`HTTP ${r.status}: ${r.statusText}`);
+      }
+      
+      const contentType = r.headers.get('content-type');
+      const responseText = await r.text();
+      
+      if (!contentType || !contentType.includes('application/json')) {
+        console.error('API returned non-JSON response:', responseText.substring(0, 300));
+        throw new Error('API returned non-JSON content for export.');
+      }
+      
+      let data;
+      try {
+        data = JSON.parse(responseText);
+      } catch (parseError) {
+        console.error('Failed to parse JSON:', parseError, 'Response:', responseText.substring(0, 500));
+        throw new Error('Invalid JSON response from API.');
+      }
+      
+      return data;
+    })
     .then(data => {
       if (!data.success) throw new Error(data.error);
       
@@ -4448,16 +4463,13 @@ document.getElementById('historyDetailsCloseBtn')?.addEventListener('click', fun
   document.getElementById('historyDetailsModal').setAttribute('aria-hidden', 'true');
 });
 
-// Load initial logs when History view is shown
-const historyView = document.getElementById('adminViewHistory');
-if (historyView) {
-  const observer = new MutationObserver(function() {
-    if (!historyView.classList.contains('hidden') && historyTotalCount === 0) {
-      loadActivityLogs();
-    }
-  });
-  observer.observe(historyView, { attributes: true });
-}
+document.getElementById('reportTabOverview')?.addEventListener('click', function() {
+  switchReportTab('overview');
+});
+
+document.getElementById('reportTabHistory')?.addEventListener('click', function() {
+  switchReportTab('history');
+});
 
 initializeApp();
     </script>
