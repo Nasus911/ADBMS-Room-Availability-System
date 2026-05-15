@@ -155,12 +155,14 @@ function adbms_ensure_schema(PDO $pdo): void
             `scheduled_hour` TINYINT UNSIGNED NOT NULL,
             `scheduled_minute` TINYINT UNSIGNED NOT NULL,
             `scheduled_period` ENUM('AM','PM') NOT NULL,
+            `assigned_by_username` VARCHAR(64) DEFAULT NULL,
             `status` ENUM('Pending','Approved','Rejected','Cancelled') NOT NULL DEFAULT 'Approved',
             `created_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
             `updated_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
             PRIMARY KEY (`id`),
             KEY `idx_schedules_professor_username` (`professor_username`),
             KEY `idx_schedules_room_number` (`room_number`),
+            KEY `idx_schedules_assigned_by_username` (`assigned_by_username`),
             CONSTRAINT `fk_schedules_room_number` FOREIGN KEY (`room_number`) REFERENCES `rooms` (`room_number`) ON DELETE CASCADE ON UPDATE CASCADE
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci"
     );
@@ -202,6 +204,14 @@ function adbms_ensure_schema(PDO $pdo): void
     );
 
     $pdo->exec('REPLACE INTO schema_version (id, version) VALUES (1, 2)');
+
+    // Ensure backward-compatible addition of assigned_by_username column for schedules
+    try {
+        $pdo->exec("ALTER TABLE schedules ADD COLUMN IF NOT EXISTS assigned_by_username VARCHAR(64) DEFAULT NULL");
+        $pdo->exec("CREATE INDEX IF NOT EXISTS idx_schedules_assigned_by_username ON schedules (assigned_by_username)");
+    } catch (Throwable $_) {
+        // best-effort: ignore if ALTER/CREATE INDEX not supported on this server
+    }
 }
 
 function adbms_drop_schema(PDO $pdo): void
@@ -504,6 +514,7 @@ function adbms_fetch_schedules(PDO $pdo): array
             scheduled_minute AS minute,
             scheduled_period AS amPm,
             status,
+            assigned_by_username AS assignedByUsername,
             DATE_FORMAT(created_at, '%Y-%m-%dT%H:%i:%s') AS createdAt
         FROM schedules
         ORDER BY scheduled_date ASC, scheduled_hour ASC, scheduled_minute ASC, id ASC"
@@ -846,8 +857,8 @@ function adbms_sync_schedules(PDO $pdo, array $items): void
     $pdo->beginTransaction();
     try {
         $keep = [];
-        $stmt = $pdo->prepare(
-            'INSERT INTO schedules (id, professor_username, room_number, scheduled_date, scheduled_hour, scheduled_minute, scheduled_period, status, created_at) VALUES (:id, :professor_username, :room_number, :scheduled_date, :scheduled_hour, :scheduled_minute, :scheduled_period, :status, :created_at) ON DUPLICATE KEY UPDATE professor_username = VALUES(professor_username), room_number = VALUES(room_number), scheduled_date = VALUES(scheduled_date), scheduled_hour = VALUES(scheduled_hour), scheduled_minute = VALUES(scheduled_minute), scheduled_period = VALUES(scheduled_period), status = VALUES(status), created_at = VALUES(created_at)'
+            $stmt = $pdo->prepare(
+            'INSERT INTO schedules (id, professor_username, room_number, scheduled_date, scheduled_hour, scheduled_minute, scheduled_period, assigned_by_username, status, created_at) VALUES (:id, :professor_username, :room_number, :scheduled_date, :scheduled_hour, :scheduled_minute, :scheduled_period, :assigned_by_username, :status, :created_at) ON DUPLICATE KEY UPDATE professor_username = VALUES(professor_username), room_number = VALUES(room_number), scheduled_date = VALUES(scheduled_date), scheduled_hour = VALUES(scheduled_hour), scheduled_minute = VALUES(scheduled_minute), scheduled_period = VALUES(scheduled_period), assigned_by_username = VALUES(assigned_by_username), status = VALUES(status), created_at = VALUES(created_at)'
         );
 
         foreach ($items as $item) {
@@ -864,6 +875,7 @@ function adbms_sync_schedules(PDO $pdo, array $items): void
             $scheduledPeriod = strtoupper(adbms_normalize_string($item['amPm'] ?? $item['scheduled_period'] ?? null) ?? '');
             $status = adbms_normalize_string($item['status'] ?? 'Approved') ?? 'Approved';
             $createdAt = adbms_normalize_datetime($item['createdAt'] ?? $item['created_at'] ?? null) ?? date('Y-m-d H:i:s');
+            $assignedBy = adbms_normalize_string($item['assignedByUsername'] ?? $item['assigned_by_username'] ?? null);
 
             if ($professorUsername === null || $roomNumber <= 0 || $scheduledDate === null || $scheduledHour < 1 || $scheduledHour > 12) {
                 throw new RuntimeException('Each schedule requires a professor, room, date, and hour.');
@@ -889,6 +901,7 @@ function adbms_sync_schedules(PDO $pdo, array $items): void
                 ':scheduled_hour' => $scheduledHour,
                 ':scheduled_minute' => $scheduledMinute,
                 ':scheduled_period' => $scheduledPeriod,
+                ':assigned_by_username' => $assignedBy,
                 ':status' => $status,
                 ':created_at' => $createdAt,
             ]);

@@ -47,7 +47,7 @@ This document outlines strategies for distributing the ADBMS Room Availability S
 
 ---
 
-## Fragmentation Strategies
+![alt text](image.png)## Fragmentation Strategies
 
 Fragmentation divides data across multiple database nodes to improve performance and scalability.
 

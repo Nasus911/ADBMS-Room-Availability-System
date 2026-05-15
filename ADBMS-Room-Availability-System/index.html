@@ -1377,7 +1377,7 @@ select {
               <button class="nav-item active" data-admin-view="dashboard">&#127968; Dashboard</button>
               <button class="nav-item" data-admin-view="manage">&#128101; Manage Users</button>
               <button class="nav-item" data-admin-view="reports">&#128232; Reports</button>
-              <button class="nav-item" data-admin-view="settings">&#9881; Settings</button>
+              
               <button id="adminLogoutBtn" class="nav-item">&#8617; Log Out</button>
             </aside>
 
@@ -1525,16 +1525,30 @@ select {
               <div id="adminViewReports" class="view hidden">
                 <h1>Reports</h1>
                 <div class="panel">
-                  <p>Room activity report view is ready for backend integration.</p>
+                  <div class="reports-controls" style="display:flex; gap:12px; align-items:center; margin-bottom:10px;">
+                    <label>Professor: <select id="reportsProfessorFilter"><option value="">All</option></select></label>
+                    <label>Room: <select id="reportsRoomFilter"><option value="">All</option></select></label>
+                    <button id="reportsRefresh" class="primary">Refresh</button>
+                  </div>
+                  <div class="table-scroll">
+                    <table id="reportsTable">
+                      <thead>
+                        <tr>
+                          <th>Professor</th>
+                          <th>Assigned Room</th>
+                          <th>Schedule / Time</th>
+                          <th>Date Assigned</th>
+                          <th>Assigned By</th>
+                          <th>Action</th>
+                        </tr>
+                      </thead>
+                      <tbody id="reportsTableBody"></tbody>
+                    </table>
+                  </div>
                 </div>
               </div>
 
-              <div id="adminViewSettings" class="view hidden">
-                <h1>Settings</h1>
-                <div class="panel">
-                  <p>System settings panel is active and ready for configuration options.</p>
-                </div>
-              </div>
+              
             </section>
           </div>
         </div>
@@ -1975,7 +1989,7 @@ let schedules = [];
 
 function saveRooms() {
   writeCachedJson(ROOMS_KEY, rooms);
-  return apiRequest('rooms', 'save', { items: rooms }).catch(function() { return null; });
+  return apiRequest('rooms', 'save', { items: rooms }).then(function(res){ try{ if (typeof renderReports === 'function') renderReports(); }catch(e){} return res; }).catch(function() { return null; });
 }
 
 function announceRoomChange(roomNumber) {
@@ -2031,7 +2045,7 @@ function loadUsers() {
 
 function saveCheckins() {
   writeCachedJson(CHECKINS_KEY, checkins);
-  return apiRequest('checkins', 'save', { items: checkins }).catch(function() { return null; });
+  return apiRequest('checkins', 'save', { items: checkins }).then(function(res){ try{ if (typeof renderReports === 'function') renderReports(); }catch(e){} return res; }).catch(function() { return null; });
 }
 
 function loadCheckins() {
@@ -2054,7 +2068,7 @@ function loadCheckins() {
 
 function saveSchedules() {
   writeCachedJson(SCHEDULES_KEY, schedules);
-  return apiRequest('schedules', 'save', { items: schedules }).catch(function() { return null; });
+  return apiRequest('schedules', 'save', { items: schedules }).then(function(res){ try{ if (typeof renderReports === 'function') renderReports(); }catch(e){} return res; }).catch(function() { return null; });
 }
 
 function loadSchedules() {
@@ -2385,7 +2399,7 @@ function recordOccupancyChange(roomNumber, previousOccupiedBy, newOccupiedBy) {
     // record date in YYYY-MM-DD for easy daily counting
     var d = new Date();
     var todayKey = d.toISOString().slice(0,10);
-    checkins.push({ room: roomNumber, user: newOccupiedBy, date: todayKey, ts: Date.now() });
+    checkins.push({ room: roomNumber, user: newOccupiedBy, date: todayKey, ts: Date.now(), metadata: { assignedByUsername: currentUser && currentUser.username ? currentUser.username : null } });
     // notify about the check-in and persist for the professor
     var user = getUserByUsername(newOccupiedBy);
     var display = user ? getDisplayName(user) : newOccupiedBy;
@@ -2513,7 +2527,6 @@ const adminViews = {
   dashboard: document.getElementById("adminViewDashboard"),
   manage: document.getElementById("adminViewManage"),
   reports: document.getElementById("adminViewReports"),
-  settings: document.getElementById("adminViewSettings"),
 };
 
 const addUserModal = document.getElementById("addUserModal");
@@ -2682,6 +2695,10 @@ function switchAdminView(view) {
   navItems.forEach(function(item) {
     item.classList.toggle("active", item.dataset.adminView === view);
   });
+  if (view === 'reports') {
+    // ensure latest data then render
+    Promise.all([loadSchedules(), loadCheckins()]).then(function(){ try{ renderReports(); }catch(e){} });
+  }
 }
 
 function getProfessorOptions() {
@@ -3068,6 +3085,128 @@ function renderProfessorSchedules() {
     });
   });
 }
+
+function renderReports() {
+  var container = document.getElementById('reportsTableBody');
+  var profFilter = document.getElementById('reportsProfessorFilter');
+  var roomFilter = document.getElementById('reportsRoomFilter');
+  if (!container) return;
+
+  // prepare filters
+  if (profFilter) {
+    var profs = users.filter(function(u){ return u.role === 'Professor'; });
+    profFilter.innerHTML = '<option value="">All</option>' + profs.map(function(p){ return '<option value="'+p.username+'">'+getDisplayName(p)+'</option>'; }).join('');
+  }
+  if (roomFilter) {
+    var roomOptions = rooms.slice().sort(function(a,b){ return a.room - b.room; });
+    roomFilter.innerHTML = '<option value="">All</option>' + roomOptions.map(function(r){ return '<option value="'+r.room+'">Room '+r.room+'</option>'; }).join('');
+  }
+
+  // Build rows from schedules (future/approved) and checkins (immediate assignments)
+  var rows = [];
+
+  schedules.forEach(function(s){
+    rows.push({
+      type: 'schedule',
+      id: s.id,
+      professorUsername: s.professorUsername,
+      roomNumber: s.roomNumber,
+      when: (s.hour ? (s.hour + ':' + (s.minute < 10 ? '0' : '') + s.minute + ' ' + s.amPm) : '-'),
+      dateAssigned: s.createdAt || s.createdAt || '-',
+      assignedBy: s.assignedByUsername || '-',
+      displayDate: s.date || '-',
+      raw: s
+    });
+  });
+
+  (checkins || []).forEach(function(c){
+    rows.push({
+      type: 'checkin',
+      id: c.id || (c.ts? 'ci_'+c.ts : 'ci_'+Math.random()),
+      professorUsername: c.user,
+      roomNumber: c.room,
+      when: (c.ts ? new Date(c.ts).toLocaleString() : '-'),
+      dateAssigned: c.date || '-',
+      assignedBy: (c.metadata && c.metadata.assignedByUsername) ? c.metadata.assignedByUsername : '-',
+      displayDate: c.date || '-',
+      raw: c
+    });
+  });
+
+  // Apply filters
+  var pf = profFilter ? profFilter.value : '';
+  var rf = roomFilter ? roomFilter.value : '';
+  if (pf) rows = rows.filter(function(r){ return String(r.professorUsername) === String(pf); });
+  if (rf) rows = rows.filter(function(r){ return String(r.roomNumber) === String(rf); });
+
+  // Sort by dateAssigned desc
+  rows.sort(function(a,b){ return new Date(b.dateAssigned || 0) - new Date(a.dateAssigned || 0); });
+
+  container.innerHTML = rows.map(function(r){
+    var prof = getUserByUsername(r.professorUsername);
+    var profName = prof ? getDisplayName(prof) : (r.professorUsername || 'Unknown');
+    var assignedByName = (r.assignedBy && getUserByUsername(r.assignedBy)) ? getDisplayName(getUserByUsername(r.assignedBy)) : (r.assignedBy || '-');
+    var actionBtn = '';
+    if (r.type === 'checkin') {
+      actionBtn = '<button class="danger-btn" data-report-action="unassign" data-room="'+r.roomNumber+'">Unassign</button>';
+    } else if (r.type === 'schedule') {
+      actionBtn = '<button class="secondary" data-report-action="cancel-schedule" data-id="'+r.id+'">Cancel</button>';
+    }
+    return '<tr data-type="'+r.type+'" data-id="'+r.id+'">' +
+      '<td>' + profName + '</td>' +
+      '<td>Room ' + r.roomNumber + '</td>' +
+      '<td>' + (r.type === 'schedule' ? (r.displayDate + ' @ ' + r.when) : r.when) + '</td>' +
+      '<td>' + (r.dateAssigned ? (new Date(r.dateAssigned).toLocaleString()) : '-') + '</td>' +
+      '<td>' + assignedByName + '</td>' +
+      '<td>' + actionBtn + '</td>' +
+      '</tr>';
+  }).join('');
+
+  // wire actions
+  var table = document.getElementById('reportsTableBody');
+  if (table) {
+    table.removeEventListener('click', reportsClickHandler);
+    table.addEventListener('click', reportsClickHandler);
+  }
+}
+
+function reportsClickHandler(event) {
+  var btn = event.target.closest('button[data-report-action]');
+  if (!btn) return;
+  var action = btn.getAttribute('data-report-action');
+  if (action === 'unassign') {
+    var room = Number(btn.getAttribute('data-room'));
+    if (!confirm('Unassign occupant from Room ' + room + '?')) return;
+    var roomObj = rooms.find(function(r){ return r.room === room; });
+    if (roomObj) {
+      var prev = roomObj.occupiedBy;
+      roomObj.occupiedBy = null;
+      saveRooms();
+      saveCheckins();
+      announceRoomChange(room);
+      syncAllDashboards();
+      notify('Unassigned', 'Room ' + room + ' has been unassigned.', {});
+    }
+    renderReports();
+  } else if (action === 'cancel-schedule') {
+    var id = btn.getAttribute('data-id');
+    if (!confirm('Cancel this scheduled assignment?')) return;
+    schedules = schedules.filter(function(s){ return s.id !== id; });
+    saveSchedules();
+    syncAllDashboards();
+    notify('Schedule Cancelled', 'Scheduled assignment has been cancelled by admin.', {});
+    renderReports();
+  }
+}
+
+document.addEventListener('DOMContentLoaded', function(){
+  var refresh = document.getElementById('reportsRefresh');
+  if (refresh) refresh.addEventListener('click', function(){ loadSchedules().then(loadCheckins).then(function(){ renderReports(); }); });
+  var pf = document.getElementById('reportsProfessorFilter');
+  var rf = document.getElementById('reportsRoomFilter');
+  if (pf) pf.addEventListener('change', renderReports);
+  if (rf) rf.addEventListener('change', renderReports);
+});
 
 function openScheduleDetailsModal(rowElement) {
   var scheduleId = rowElement.dataset.scheduleId;
@@ -3661,7 +3800,8 @@ adminAssignForm.addEventListener("submit", function(event) {
       hour: scheduleHour,
       minute: scheduleMinute,
       amPm: scheduleAmPm,
-      createdAt: Date.now()
+      createdAt: new Date().toISOString(),
+      assignedByUsername: currentUser && currentUser.username ? currentUser.username : null
     };
     schedules.push(scheduleObj);
     saveSchedules();
@@ -4044,6 +4184,13 @@ window.addEventListener('storage', function(e) {
       var payload = e.newValue ? JSON.parse(e.newValue) : null;
       if (payload && payload.room) highlightRoomRow(payload.room);
     } catch (err) {}
+  }
+  if (e.key === SCHEDULES_KEY) {
+    loadSchedules();
+    try { if (typeof renderReports === 'function') renderReports(); } catch (e) {}
+  }
+  if (e.key === CHECKINS_KEY) {
+    try { if (typeof renderReports === 'function') renderReports(); } catch (e) {}
   }
 });
 
