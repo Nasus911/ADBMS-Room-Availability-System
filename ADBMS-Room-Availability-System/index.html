@@ -1752,7 +1752,7 @@ select {
                 </table>
               </div>
             </div>
-            <div id="profReservationSection" class="reservation-panel">
+            <div class="reservation-panel">
               <h3 class="reservation-title">Request Room Reservation</h3>
               <form id="profReservationForm" class="reservation-form panel">
                 <div class="reservation-grid two-cols">
@@ -1793,6 +1793,8 @@ select {
                 </div>
                 <p id="profReservationError" class="form-error hidden"></p>
               </form>
+            </div>
+            <div id="profReservationSection" class="reservation-panel">
               <h3 class="reservation-subtitle">My Pending Reservations</h3>
               <div class="reservation-table table-scroll">
                 <table>
@@ -2512,6 +2514,8 @@ const adminStatusSelect = document.getElementById("adminStatusSelect");
 const adminAssignError = document.getElementById("adminAssignError");
 const profRoomBody = document.getElementById("profRoomBody");
 const profFloorSelect = document.getElementById("profFloorSelect");
+const profReservationForm = document.getElementById("profReservationForm");
+const profReservationError = document.getElementById("profReservationError");
 const usersBody = document.getElementById("usersBody");
 const studentRoomBody = document.getElementById("studentRoomBody");
 const studentNote = document.getElementById("studentNote");
@@ -3276,8 +3280,9 @@ function renderProfessorPendingReservations() {
   
   if (activeReservations.length === 0) {
     tbody.innerHTML = '<tr><td colspan="4" style="text-align: center; color: #6b7280; padding: 20px;">No pending reservations</td></tr>';
+    // Always keep section visible
     if (section) {
-      section.style.display = 'none';
+      section.style.display = 'block';
     }
     return;
   }
@@ -3827,6 +3832,117 @@ adminAssignForm.addEventListener("submit", function(event) {
   announceRoomChange(selectedRoom.room);
   syncAllDashboards();
 });
+
+// Professor Room Reservation Form Handler
+if (profReservationForm) {
+  profReservationForm.addEventListener("submit", function(event) {
+    event.preventDefault();
+    
+    if (!currentUser || currentUser.role !== "Professor") {
+      return;
+    }
+    
+    var roomNumber = Number(document.getElementById("profReqRoom").value);
+    var resDate = document.getElementById("profReqDate").value;
+    var resHour = document.getElementById("profReqHour").value;
+    var resMinute = document.getElementById("profReqMin").value;
+    var resAmPm = document.getElementById("profReqAmPm").value;
+    
+    profReservationError.textContent = "";
+    profReservationError.classList.add("hidden");
+    
+    // Validate inputs
+    if (!roomNumber) {
+      profReservationError.textContent = "Please select a room.";
+      profReservationError.classList.remove("hidden");
+      return;
+    }
+    
+    if (!resDate) {
+      profReservationError.textContent = "Please select a date.";
+      profReservationError.classList.remove("hidden");
+      return;
+    }
+    
+    if (!resHour || !resMinute || !resAmPm) {
+      profReservationError.textContent = "Please select a valid time (hour, minute, and AM/PM).";
+      profReservationError.classList.remove("hidden");
+      return;
+    }
+    
+    // Validate date format
+    var dateValidation = validateScheduleDate(resDate);
+    if (!dateValidation.valid) {
+      profReservationError.textContent = "Date validation failed: " + dateValidation.error;
+      profReservationError.classList.remove("hidden");
+      return;
+    }
+    
+    // Validate time format
+    var timeValidation = validateScheduleTime(resHour, resMinute, resAmPm);
+    if (!timeValidation.valid) {
+      profReservationError.textContent = "Time validation failed: " + timeValidation.error;
+      profReservationError.classList.remove("hidden");
+      return;
+    }
+    
+    // Check if room exists
+    var selectedRoom = rooms.find(function(room) { return room.room === roomNumber; });
+    if (!selectedRoom) {
+      profReservationError.textContent = "Selected room not found.";
+      profReservationError.classList.remove("hidden");
+      return;
+    }
+    
+    // Create reservation object
+    var reservation = createReservation(
+      currentUser.username,
+      roomNumber,
+      resDate,
+      resHour,
+      resMinute,
+      resAmPm
+    );
+    
+    // Add to reservations array
+    reservations.push(reservation);
+    saveReservations();
+    
+    // Clear form
+    profReservationForm.reset();
+    
+    // Re-render pending reservations to show the new request
+    renderProfessorPendingReservations();
+    
+    // Update room options
+    populateProfessorReservationRooms();
+    
+    // Show success message
+    notify('Reservation Requested', 'Your room reservation request for Room ' + roomNumber + ' on ' + resDate + ' at ' + resHour + ':' + (resMinute < 10 ? '0' : '') + resMinute + ' ' + resAmPm + ' has been submitted.');
+    
+    // Sync dashboards to update admin view
+    syncAllDashboards();
+  });
+  
+  // Update available rooms when date/time inputs change
+  var profReqDateInput = document.getElementById("profReqDate");
+  var profReqHourInput = document.getElementById("profReqHour");
+  var profReqMinInput = document.getElementById("profReqMin");
+  var profReqAmPmInput = document.getElementById("profReqAmPm");
+  
+  if (profReqDateInput) {
+    profReqDateInput.addEventListener("change", populateProfessorReservationRooms);
+  }
+  if (profReqHourInput) {
+    profReqHourInput.addEventListener("change", populateProfessorReservationRooms);
+  }
+  if (profReqMinInput) {
+    profReqMinInput.addEventListener("change", populateProfessorReservationRooms);
+  }
+  if (profReqAmPmInput) {
+    profReqAmPmInput.addEventListener("change", populateProfessorReservationRooms);
+  }
+}
 
 passwordToggles.forEach(function(toggle) {
   toggle.addEventListener("click", function() {
