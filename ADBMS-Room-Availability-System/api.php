@@ -121,6 +121,46 @@ try {
                 adbms_respond(['success' => true, 'items' => adbms_fetch_notifications($pdo)]);
             }
             break;
+
+        case 'activity_logs':
+        case 'history_logs':
+            if ($action === 'list' || $method === 'GET') {
+                $limit = (int) ($_GET['limit'] ?? 100);
+                $offset = (int) ($_GET['offset'] ?? 0);
+                $filters = [];
+                
+                if (!empty($_GET['user_id'])) {
+                    $filters['user_id'] = $_GET['user_id'];
+                }
+                if (!empty($_GET['action_type'])) {
+                    $filters['action_type'] = $_GET['action_type'];
+                }
+                if (!empty($_GET['affected_table'])) {
+                    $filters['affected_table'] = $_GET['affected_table'];
+                }
+                if (!empty($_GET['date_from'])) {
+                    $filters['date_from'] = $_GET['date_from'];
+                }
+                if (!empty($_GET['date_to'])) {
+                    $filters['date_to'] = $_GET['date_to'];
+                }
+                if (!empty($_GET['search'])) {
+                    $filters['search'] = $_GET['search'];
+                }
+                
+                $total = adbms_get_activity_logs_count($pdo, $filters);
+                $logs = adbms_fetch_activity_logs($pdo, $filters, $limit, $offset);
+                
+                adbms_respond([
+                    'success' => true,
+                    'items' => $logs,
+                    'total' => $total,
+                    'limit' => $limit,
+                    'offset' => $offset,
+                    'hasMore' => ($offset + $limit) < $total,
+                ]);
+            }
+            break;
     }
 
     adbms_respond(['success' => false, 'error' => 'Unsupported entity or action.'], 404);

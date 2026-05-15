@@ -201,6 +201,30 @@ function adbms_ensure_schema(PDO $pdo): void
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci"
     );
 
+    $pdo->exec(
+        "CREATE TABLE IF NOT EXISTS `activity_logs` (
+            `log_id` VARCHAR(80) NOT NULL,
+            `user_id` VARCHAR(64) DEFAULT NULL,
+            `user_role` ENUM('Admin','Professor','Student','System') DEFAULT NULL,
+            `affected_table` VARCHAR(64) NOT NULL,
+            `affected_record_id` VARCHAR(255) NOT NULL,
+            `action_type` ENUM('CREATE','READ','UPDATE','DELETE','LOGIN','LOGOUT','ASSIGN','REASSIGN','APPROVE','REJECT') NOT NULL,
+            `description` TEXT DEFAULT NULL,
+            `old_value` LONGTEXT DEFAULT NULL,
+            `new_value` LONGTEXT DEFAULT NULL,
+            `changes_json` JSON DEFAULT NULL,
+            `ip_address` VARCHAR(45) DEFAULT NULL,
+            `created_at` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+            PRIMARY KEY (`log_id`),
+            KEY `idx_logs_user_id` (`user_id`),
+            KEY `idx_logs_affected_table` (`affected_table`),
+            KEY `idx_logs_affected_record_id` (`affected_record_id`),
+            KEY `idx_logs_action_type` (`action_type`),
+            KEY `idx_logs_created_at` (`created_at`),
+            KEY `idx_logs_user_action_time` (`user_id`, `action_type`, `created_at`)
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci"
+    );
+
     $pdo->exec('REPLACE INTO schema_version (id, version) VALUES (1, 2)');
 }
 
@@ -208,6 +232,7 @@ function adbms_drop_schema(PDO $pdo): void
 {
     $pdo->exec('SET FOREIGN_KEY_CHECKS = 0');
     $pdo->exec('DROP VIEW IF EXISTS `room_utilization`');
+    $pdo->exec('DROP TABLE IF EXISTS `activity_logs`');
     $pdo->exec('DROP TABLE IF EXISTS `notifications`');
     $pdo->exec('DROP TABLE IF EXISTS `reservations`');
     $pdo->exec('DROP TABLE IF EXISTS `schedules`');
@@ -671,11 +696,222 @@ function adbms_delete_missing(PDO $pdo, string $table, string $column, array $ke
     $stmt->execute($keepKeys);
 }
 
+// ============================================================================
+// ACTIVITY LOGGING FUNCTIONS
+// ============================================================================
+
+function adbms_get_client_ip(): string
+{
+    if (!empty($_SERVER['HTTP_CF_CONNECTING_IP'])) {
+        return $_SERVER['HTTP_CF_CONNECTING_IP'];
+    }
+    if (!empty($_SERVER['HTTP_X_FORWARDED_FOR'])) {
+        $ips = explode(',', $_SERVER['HTTP_X_FORWARDED_FOR']);
+        return trim($ips[0]);
+    }
+    if (!empty($_SERVER['HTTP_X_FORWARDED'])) {
+        return $_SERVER['HTTP_X_FORWARDED'];
+    }
+    if (!empty($_SERVER['HTTP_FORWARDED_FOR'])) {
+        return $_SERVER['HTTP_FORWARDED_FOR'];
+    }
+    if (!empty($_SERVER['HTTP_FORWARDED'])) {
+        return $_SERVER['HTTP_FORWARDED'];
+    }
+    return $_SERVER['REMOTE_ADDR'] ?? '0.0.0.0';
+}
+
+function adbms_log_activity(
+    PDO $pdo,
+    string $actionType,
+    string $affectedTable,
+    string $affectedRecordId,
+    ?string $userId = null,
+    ?string $userRole = null,
+    ?array $oldValue = null,
+    ?array $newValue = null,
+    ?string $description = null
+): void
+{
+    try {
+        $logId = adbms_unique_id('log');
+        $ipAddress = adbms_get_client_ip();
+        
+        // Calculate changes
+        $changes = [];
+        if ($oldValue !== null && $newValue !== null) {
+            foreach ($newValue as $key => $newVal) {
+                $oldVal = $oldValue[$key] ?? null;
+                if ($oldVal !== $newVal) {
+                    $changes[$key] = [
+                        'old' => $oldVal,
+                        'new' => $newVal
+                    ];
+                }
+            }
+        }
+        
+        $changesJson = !empty($changes) ? json_encode($changes, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) : null;
+        $oldValueJson = $oldValue !== null ? json_encode($oldValue, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) : null;
+        $newValueJson = $newValue !== null ? json_encode($newValue, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) : null;
+        
+        $stmt = $pdo->prepare(
+            'INSERT INTO activity_logs (log_id, user_id, user_role, affected_table, affected_record_id, action_type, description, old_value, new_value, changes_json, ip_address, created_at) 
+             VALUES (:log_id, :user_id, :user_role, :affected_table, :affected_record_id, :action_type, :description, :old_value, :new_value, :changes_json, :ip_address, NOW())'
+        );
+        
+        $stmt->execute([
+            ':log_id' => $logId,
+            ':user_id' => $userId,
+            ':user_role' => $userRole,
+            ':affected_table' => $affectedTable,
+            ':affected_record_id' => $affectedRecordId,
+            ':action_type' => $actionType,
+            ':description' => $description,
+            ':old_value' => $oldValueJson,
+            ':new_value' => $newValueJson,
+            ':changes_json' => $changesJson,
+            ':ip_address' => $ipAddress,
+        ]);
+    } catch (Throwable $e) {
+        // Silently fail logging to avoid disrupting main operations
+        error_log('Activity logging failed: ' . $e->getMessage());
+    }
+}
+
+function adbms_fetch_activity_logs(PDO $pdo, array $filters = [], int $limit = 500, int $offset = 0): array
+{
+    $where = [];
+    $params = [];
+    
+    if (!empty($filters['user_id'])) {
+        $where[] = 'user_id = :user_id';
+        $params[':user_id'] = $filters['user_id'];
+    }
+    
+    if (!empty($filters['action_type'])) {
+        $where[] = 'action_type = :action_type';
+        $params[':action_type'] = $filters['action_type'];
+    }
+    
+    if (!empty($filters['affected_table'])) {
+        $where[] = 'affected_table = :affected_table';
+        $params[':affected_table'] = $filters['affected_table'];
+    }
+    
+    if (!empty($filters['date_from'])) {
+        $where[] = 'DATE(created_at) >= :date_from';
+        $params[':date_from'] = $filters['date_from'];
+    }
+    
+    if (!empty($filters['date_to'])) {
+        $where[] = 'DATE(created_at) <= :date_to';
+        $params[':date_to'] = $filters['date_to'];
+    }
+    
+    if (!empty($filters['search'])) {
+        $search = '%' . $filters['search'] . '%';
+        $where[] = '(affected_record_id LIKE :search OR description LIKE :search OR user_id LIKE :search)';
+        $params[':search'] = $search;
+    }
+    
+    $whereClause = !empty($where) ? 'WHERE ' . implode(' AND ', $where) : '';
+    
+    $query = "SELECT
+        log_id,
+        user_id,
+        user_role,
+        affected_table,
+        affected_record_id,
+        action_type,
+        description,
+        old_value,
+        new_value,
+        changes_json,
+        ip_address,
+        DATE_FORMAT(created_at, '%Y-%m-%dT%H:%i:%s') AS createdAt
+    FROM activity_logs
+    $whereClause
+    ORDER BY created_at DESC
+    LIMIT $limit OFFSET $offset";
+    
+    $stmt = $pdo->prepare($query);
+    $stmt->execute($params);
+    
+    $logs = $stmt->fetchAll();
+    foreach ($logs as &$log) {
+        if (!empty($log['old_value'])) {
+            $decoded = json_decode($log['old_value'], true);
+            $log['oldValue'] = json_last_error() === JSON_ERROR_NONE ? $decoded : $log['old_value'];
+        }
+        if (!empty($log['new_value'])) {
+            $decoded = json_decode($log['new_value'], true);
+            $log['newValue'] = json_last_error() === JSON_ERROR_NONE ? $decoded : $log['new_value'];
+        }
+        if (!empty($log['changes_json'])) {
+            $decoded = json_decode($log['changes_json'], true);
+            $log['changes'] = json_last_error() === JSON_ERROR_NONE ? $decoded : [];
+        }
+    }
+    
+    return $logs;
+}
+
+function adbms_get_activity_logs_count(PDO $pdo, array $filters = []): int
+{
+    $where = [];
+    $params = [];
+    
+    if (!empty($filters['user_id'])) {
+        $where[] = 'user_id = :user_id';
+        $params[':user_id'] = $filters['user_id'];
+    }
+    
+    if (!empty($filters['action_type'])) {
+        $where[] = 'action_type = :action_type';
+        $params[':action_type'] = $filters['action_type'];
+    }
+    
+    if (!empty($filters['affected_table'])) {
+        $where[] = 'affected_table = :affected_table';
+        $params[':affected_table'] = $filters['affected_table'];
+    }
+    
+    if (!empty($filters['date_from'])) {
+        $where[] = 'DATE(created_at) >= :date_from';
+        $params[':date_from'] = $filters['date_from'];
+    }
+    
+    if (!empty($filters['date_to'])) {
+        $where[] = 'DATE(created_at) <= :date_to';
+        $params[':date_to'] = $filters['date_to'];
+    }
+    
+    if (!empty($filters['search'])) {
+        $search = '%' . $filters['search'] . '%';
+        $where[] = '(affected_record_id LIKE :search OR description LIKE :search OR user_id LIKE :search)';
+        $params[':search'] = $search;
+    }
+    
+    $whereClause = !empty($where) ? 'WHERE ' . implode(' AND ', $where) : '';
+    
+    $query = "SELECT COUNT(*) FROM activity_logs $whereClause";
+    
+    $stmt = $pdo->prepare($query);
+    $stmt->execute($params);
+    
+    return (int) $stmt->fetchColumn();
+}
+
+
+
 function adbms_sync_users(PDO $pdo, array $items): void
 {
     $existingHashes = [];
-    foreach ($pdo->query('SELECT username, password_hash FROM users') as $row) {
+    $existingUsers = [];
+    foreach ($pdo->query('SELECT username, name, password_hash, role, status FROM users') as $row) {
         $existingHashes[$row['username']] = $row['password_hash'];
+        $existingUsers[$row['username']] = $row;
     }
 
     $pdo->beginTransaction();
@@ -717,6 +953,16 @@ function adbms_sync_users(PDO $pdo, array $items): void
                 throw new RuntimeException('A password is required when creating user ' . $username . '.');
             }
 
+            // Determine if this is a create or update and log accordingly
+            $isNew = !isset($existingUsers[$username]);
+            $oldData = $isNew ? null : $existingUsers[$username];
+            $newData = [
+                'username' => $username,
+                'name' => $name,
+                'role' => $role,
+                'status' => $status,
+            ];
+
             $stmt->execute([
                 ':username' => $username,
                 ':name' => $name,
@@ -725,6 +971,19 @@ function adbms_sync_users(PDO $pdo, array $items): void
                 ':status' => $status,
                 ':last_login' => $lastLogin,
             ]);
+
+            // Log the operation
+            adbms_log_activity(
+                $pdo,
+                $isNew ? 'CREATE' : 'UPDATE',
+                'users',
+                $username,
+                $_SESSION['user']['username'] ?? null,
+                $_SESSION['user']['role'] ?? null,
+                $oldData,
+                $newData,
+                $isNew ? 'User created' : 'User updated'
+            );
 
             $keep[] = $username;
         }
@@ -741,6 +1000,11 @@ function adbms_sync_users(PDO $pdo, array $items): void
 
 function adbms_sync_rooms(PDO $pdo, array $items): void
 {
+    $existingRooms = [];
+    foreach ($pdo->query('SELECT room_number, floor_number, status, occupied_by_username FROM rooms') as $row) {
+        $existingRooms[$row['room_number']] = $row;
+    }
+
     $pdo->beginTransaction();
     try {
         $keep = [];
@@ -767,6 +1031,19 @@ function adbms_sync_rooms(PDO $pdo, array $items): void
             $occupiedBy = adbms_normalize_string($item['occupiedBy'] ?? $item['occupied_by_username'] ?? null);
             $statusUpdatedAt = adbms_normalize_datetime($item['statusUpdatedAt'] ?? $item['status_updated_at'] ?? null) ?? date('Y-m-d H:i:s');
 
+            // Determine if this is a create or update and log accordingly
+            $isNew = !isset($existingRooms[$roomNumber]);
+            $oldData = $isNew ? null : [
+                'room_number' => $existingRooms[$roomNumber]['room_number'],
+                'status' => $existingRooms[$roomNumber]['status'],
+                'occupied_by_username' => $existingRooms[$roomNumber]['occupied_by_username'],
+            ];
+            $newData = [
+                'room_number' => $roomNumber,
+                'status' => $status,
+                'occupied_by_username' => $occupiedBy,
+            ];
+
             $stmt->execute([
                 ':room_number' => $roomNumber,
                 ':floor_number' => $floorNumber,
@@ -774,6 +1051,19 @@ function adbms_sync_rooms(PDO $pdo, array $items): void
                 ':occupied_by_username' => $occupiedBy,
                 ':status_updated_at' => $statusUpdatedAt,
             ]);
+
+            // Log the operation
+            adbms_log_activity(
+                $pdo,
+                $isNew ? 'CREATE' : 'UPDATE',
+                'rooms',
+                (string) $roomNumber,
+                $_SESSION['user']['username'] ?? null,
+                $_SESSION['user']['role'] ?? null,
+                $oldData,
+                $newData,
+                $isNew ? 'Room created' : 'Room updated'
+            );
 
             $keep[] = $roomNumber;
         }
@@ -790,6 +1080,11 @@ function adbms_sync_rooms(PDO $pdo, array $items): void
 
 function adbms_sync_checkins(PDO $pdo, array $items): void
 {
+    $existingCheckins = [];
+    foreach ($pdo->query('SELECT id, room_number, user_username, checkin_date FROM checkins') as $row) {
+        $existingCheckins[$row['id']] = $row;
+    }
+
     $pdo->beginTransaction();
     try {
         $keep = [];
@@ -819,6 +1114,19 @@ function adbms_sync_checkins(PDO $pdo, array $items): void
 
             $metadataJson = $metadata === null || $metadata === '' ? null : json_encode($metadata, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
 
+            // Determine if this is a create or update and log accordingly
+            $isNew = !isset($existingCheckins[$id]);
+            $oldData = $isNew ? null : [
+                'room_number' => $existingCheckins[$id]['room_number'],
+                'user_username' => $existingCheckins[$id]['user_username'],
+                'checkin_date' => $existingCheckins[$id]['checkin_date'],
+            ];
+            $newData = [
+                'room_number' => $roomNumber,
+                'user_username' => $userUsername,
+                'checkin_date' => $checkinDate,
+            ];
+
             $stmt->execute([
                 ':id' => $id,
                 ':room_number' => $roomNumber,
@@ -827,6 +1135,19 @@ function adbms_sync_checkins(PDO $pdo, array $items): void
                 ':ts' => $ts,
                 ':metadata' => $metadataJson,
             ]);
+
+            // Log the operation
+            adbms_log_activity(
+                $pdo,
+                $isNew ? 'CREATE' : 'UPDATE',
+                'checkins',
+                $id,
+                $_SESSION['user']['username'] ?? null,
+                $_SESSION['user']['role'] ?? null,
+                $oldData,
+                $newData,
+                $isNew ? 'Check-in created' : 'Check-in updated'
+            );
 
             $keep[] = $id;
         }
@@ -843,6 +1164,11 @@ function adbms_sync_checkins(PDO $pdo, array $items): void
 
 function adbms_sync_schedules(PDO $pdo, array $items): void
 {
+    $existingSchedules = [];
+    foreach ($pdo->query('SELECT id, professor_username, room_number, scheduled_date, status FROM schedules') as $row) {
+        $existingSchedules[$row['id']] = $row;
+    }
+
     $pdo->beginTransaction();
     try {
         $keep = [];
@@ -881,6 +1207,21 @@ function adbms_sync_schedules(PDO $pdo, array $items): void
                 throw new RuntimeException('Unsupported schedule status.');
             }
 
+            // Determine if this is a create or update and log accordingly
+            $isNew = !isset($existingSchedules[$id]);
+            $oldData = $isNew ? null : [
+                'professor_username' => $existingSchedules[$id]['professor_username'],
+                'room_number' => $existingSchedules[$id]['room_number'],
+                'scheduled_date' => $existingSchedules[$id]['scheduled_date'],
+                'status' => $existingSchedules[$id]['status'],
+            ];
+            $newData = [
+                'professor_username' => $professorUsername,
+                'room_number' => $roomNumber,
+                'scheduled_date' => $scheduledDate,
+                'status' => $status,
+            ];
+
             $stmt->execute([
                 ':id' => $id,
                 ':professor_username' => $professorUsername,
@@ -892,6 +1233,19 @@ function adbms_sync_schedules(PDO $pdo, array $items): void
                 ':status' => $status,
                 ':created_at' => $createdAt,
             ]);
+
+            // Log the operation
+            adbms_log_activity(
+                $pdo,
+                $isNew ? 'CREATE' : 'UPDATE',
+                'schedules',
+                $id,
+                $_SESSION['user']['username'] ?? null,
+                $_SESSION['user']['role'] ?? null,
+                $oldData,
+                $newData,
+                $isNew ? 'Schedule created' : 'Schedule updated'
+            );
 
             $keep[] = $id;
         }
@@ -908,6 +1262,11 @@ function adbms_sync_schedules(PDO $pdo, array $items): void
 
 function adbms_sync_reservations(PDO $pdo, array $items): void
 {
+    $existingReservations = [];
+    foreach ($pdo->query('SELECT id, professor_username, room_number, reservation_date, status FROM reservations') as $row) {
+        $existingReservations[$row['id']] = $row;
+    }
+
     $pdo->beginTransaction();
     try {
         $keep = [];
@@ -949,6 +1308,33 @@ function adbms_sync_reservations(PDO $pdo, array $items): void
                 throw new RuntimeException('Unsupported reservation status.');
             }
 
+            // Determine if this is a create or update and log accordingly
+            $isNew = !isset($existingReservations[$id]);
+            $oldData = $isNew ? null : [
+                'professor_username' => $existingReservations[$id]['professor_username'],
+                'room_number' => $existingReservations[$id]['room_number'],
+                'reservation_date' => $existingReservations[$id]['reservation_date'],
+                'status' => $existingReservations[$id]['status'],
+            ];
+            $newData = [
+                'professor_username' => $professorUsername,
+                'room_number' => $roomNumber,
+                'reservation_date' => $reservationDate,
+                'status' => $status,
+            ];
+
+            // Determine action type based on status change
+            $actionType = 'UPDATE';
+            if ($isNew) {
+                $actionType = 'CREATE';
+            } elseif (!$isNew && $oldData && $oldData['status'] !== $status) {
+                if ($status === 'Approved') {
+                    $actionType = 'APPROVE';
+                } elseif ($status === 'Rejected') {
+                    $actionType = 'REJECT';
+                }
+            }
+
             $stmt->execute([
                 ':id' => $id,
                 ':professor_username' => $professorUsername,
@@ -963,6 +1349,24 @@ function adbms_sync_reservations(PDO $pdo, array $items): void
                 ':responded_by_username' => $respondedBy,
                 ':created_at' => $createdAt,
             ]);
+
+            // Log the operation
+            adbms_log_activity(
+                $pdo,
+                $actionType,
+                'reservations',
+                $id,
+                $_SESSION['user']['username'] ?? null,
+                $_SESSION['user']['role'] ?? null,
+                $oldData,
+                $newData,
+                match($actionType) {
+                    'CREATE' => 'Reservation created',
+                    'APPROVE' => 'Reservation approved',
+                    'REJECT' => 'Reservation rejected',
+                    default => 'Reservation updated',
+                }
+            );
 
             $keep[] = $id;
         }
@@ -979,6 +1383,11 @@ function adbms_sync_reservations(PDO $pdo, array $items): void
 
 function adbms_sync_notifications(PDO $pdo, array $items): void
 {
+    $existingNotifications = [];
+    foreach ($pdo->query('SELECT id, user_username, is_read FROM notifications') as $row) {
+        $existingNotifications[$row['id']] = $row;
+    }
+
     $pdo->beginTransaction();
     try {
         $keep = [];
@@ -998,6 +1407,15 @@ function adbms_sync_notifications(PDO $pdo, array $items): void
             $ts = adbms_normalize_datetime($item['ts'] ?? null) ?? date('Y-m-d H:i:s');
             $isRead = !empty($item['read'] ?? $item['is_read'] ?? false) ? 1 : 0;
 
+            // Determine if this is a create or update and log accordingly
+            $isNew = !isset($existingNotifications[$id]);
+            $oldData = $isNew ? null : [
+                'is_read' => $existingNotifications[$id]['is_read'],
+            ];
+            $newData = [
+                'is_read' => $isRead,
+            ];
+
             $stmt->execute([
                 ':id' => $id,
                 ':user_username' => $userUsername,
@@ -1006,6 +1424,33 @@ function adbms_sync_notifications(PDO $pdo, array $items): void
                 ':ts' => $ts,
                 ':is_read' => $isRead,
             ]);
+
+            // Log the operation (only log status changes, not every notification)
+            if (!$isNew && $oldData && $oldData['is_read'] !== $isRead) {
+                adbms_log_activity(
+                    $pdo,
+                    'UPDATE',
+                    'notifications',
+                    $id,
+                    $_SESSION['user']['username'] ?? null,
+                    $_SESSION['user']['role'] ?? null,
+                    $oldData,
+                    $newData,
+                    'Notification marked as ' . ($isRead ? 'read' : 'unread')
+                );
+            } elseif ($isNew) {
+                adbms_log_activity(
+                    $pdo,
+                    'CREATE',
+                    'notifications',
+                    $id,
+                    $_SESSION['user']['username'] ?? null,
+                    $_SESSION['user']['role'] ?? null,
+                    null,
+                    $newData,
+                    'Notification created'
+                );
+            }
 
             $keep[] = $id;
         }
@@ -1027,10 +1472,14 @@ function adbms_authenticate(PDO $pdo, string $username, string $password): array
     $user = $stmt->fetch();
 
     if (!$user || !adbms_verify_password($password, (string) $user['password_hash'])) {
+        // Log failed login attempt
+        adbms_log_activity($pdo, 'LOGIN', 'users', $username, $username, 'System', null, null, 'Failed login attempt');
         throw new RuntimeException('Invalid username or password.');
     }
 
     if ($user['status'] !== 'Active') {
+        // Log login attempt for inactive user
+        adbms_log_activity($pdo, 'LOGIN', 'users', $username, $username, $user['role'], null, null, 'Login attempt with inactive account');
         throw new RuntimeException('This account is inactive. Contact the admin.');
     }
 
@@ -1046,6 +1495,9 @@ function adbms_authenticate(PDO $pdo, string $username, string $password): array
     if (!$current) {
         throw new RuntimeException('Unable to refresh authenticated user.');
     }
+
+    // Log successful login
+    adbms_log_activity($pdo, 'LOGIN', 'users', $username, $username, $user['role'], null, null, 'Successful login');
 
     return $current;
 }
