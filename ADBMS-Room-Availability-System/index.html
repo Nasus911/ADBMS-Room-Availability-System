@@ -988,6 +988,28 @@ td {
   padding: 14px;
 }
 
+#reservationsContent table {
+  color: #2a3448;
+}
+
+#reservationsContent thead tr {
+  background: #2e4f7f !important;
+  color: #fff !important;
+}
+
+#reservationsContent th {
+  color: #fff !important;
+}
+
+#reservationsContent td {
+  color: #2a3448;
+}
+
+#reservationsContent h4 {
+  color: #203f70;
+  margin: 12px 0 8px;
+}
+
 input,
 select {
   height: 38px;
@@ -1737,7 +1759,7 @@ select {
               </div>
             </div>
             <div id="profScheduledSection" style="margin-bottom: 20px; display: none;">
-              <h3 style="color: #eef5ff; margin-top: 20px;">Scheduled Rooms</h3>
+              <h3 style="color: #ffffff; margin-top: 20px;">Scheduled Rooms</h3>
               <div class="table-scroll">
                 <table>
                   <thead>
@@ -2043,6 +2065,31 @@ function loadUsers() {
     writeCachedJson(USERS_KEY, users);
     return users;
   });
+}
+
+function findOfflineUser(username, password) {
+  var normalizedUsername = String(username || '').trim().toLowerCase();
+  var candidates = [];
+  var seen = Object.create(null);
+
+  function addCandidates(list) {
+    if (!Array.isArray(list)) return;
+    list.forEach(function(candidate) {
+      if (!candidate || !candidate.username) return;
+      var key = String(candidate.username).toLowerCase();
+      if (seen[key]) return;
+      seen[key] = true;
+      candidates.push(candidate);
+    });
+  }
+
+  addCandidates(users);
+  addCandidates(readCachedJson(USERS_KEY, []));
+  addCandidates(defaultUsers);
+
+  return candidates.find(function(candidate) {
+    return String(candidate.username).toLowerCase() === normalizedUsername && candidate.password === password;
+  }) || null;
 }
 
 function saveCheckins() {
@@ -3096,14 +3143,19 @@ function renderReports() {
   var roomFilter = document.getElementById('reportsRoomFilter');
   if (!container) return;
 
+  var selectedProfessor = profFilter ? profFilter.value : '';
+  var selectedRoom = roomFilter ? roomFilter.value : '';
+
   // prepare filters
   if (profFilter) {
     var profs = users.filter(function(u){ return u.role === 'Professor'; });
     profFilter.innerHTML = '<option value="">All</option>' + profs.map(function(p){ return '<option value="'+p.username+'">'+getDisplayName(p)+'</option>'; }).join('');
+    profFilter.value = profs.some(function(p){ return String(p.username) === String(selectedProfessor); }) ? selectedProfessor : '';
   }
   if (roomFilter) {
     var roomOptions = rooms.slice().sort(function(a,b){ return a.room - b.room; });
     roomFilter.innerHTML = '<option value="">All</option>' + roomOptions.map(function(r){ return '<option value="'+r.room+'">Room '+r.room+'</option>'; }).join('');
+    roomFilter.value = roomOptions.some(function(r){ return String(r.room) === String(selectedRoom); }) ? selectedRoom : '';
   }
 
   // Build rows from schedules (future/approved) and checkins (immediate assignments)
@@ -3703,9 +3755,7 @@ loginForm.addEventListener("submit", async function(event) {
     showDashboardForUser(currentUser);
     return;
   } catch (apiError) {
-    var fallbackUser = defaultUsers.find(function(c) {
-      return c.username.toLowerCase() === username.toLowerCase() && c.password === password;
-    });
+    var fallbackUser = findOfflineUser(username, password);
     if (!fallbackUser) {
       loginError.textContent = apiError && apiError.message ? apiError.message : "Invalid username or password.";
       loginError.classList.remove("hidden");

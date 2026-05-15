@@ -9,7 +9,6 @@
             "type": "pwa-chrome",
             "request": "launch",
             "url": "http://localhost:5500/index.html",
-            "preLaunchTask": "Live Server (Python py)",
             "webRoot": "${workspaceFolder}"
         }
     ]
